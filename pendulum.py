@@ -1,30 +1,31 @@
 import numpy as np 
 import time
+import math
 
 # position [m]
 x1_min = -0.5
 x1_max = 0.5
-x1_num = 11
+x1_num = 5
 
 # speed [m/s]
 x2_min = -1
 x2_max = 1
-x2_num = 11
+x2_num = 5
 
 # angle [rad]
 x3_min = -4
 x3_max = 4
-x3_num = 11
+x3_num = 5
 
 # angular velocity [rad/s]
 x4_min = -1
 x4_max = 1
-x4_num = 11
+x4_num = 5
 
 # force [N]
 u_min = -5
 u_max = 5
-u_num = 11
+u_num = 5
 
 # sampling time [s]
 dt = 0.01
@@ -62,99 +63,143 @@ x3_list = [round(x,10) for x in x3_list]
 x4_list = [round(x,10) for x in x4_list]
 u_list  = [round(x,10) for x in u_list]
 
+x1_eq = x1_list[math.ceil(len(x1_list)/2)]
+x2_eq = x1_list[math.ceil(len(x2_list)/2)]
+x3_eq = x1_list[math.ceil(len(x3_list)/2)]
+x4_eq = x1_list[math.ceil(len(x4_list)/2)]
+u_eq  = u_list[math.ceil(len(u_list)/2)]
+
 states, x1_below, x1_above, x2_below, x2_above, x3_below, x3_above, x4_below, x4_above = set(), set(),set(), set(), set(), set(), set(), set(), set()
 num_transitions, num_x1_below, num_x1_above, num_x2_below, num_x2_above, num_x3_below, num_x3_above, num_x4_below, num_x4_above = 0, 0, 0, 0, 0, 0, 0, 0, 0
 
-start = time.time()
+def generateGraphBFS():
+    
+    time_start = time.time()
 
-for x1 in x1_list:
-    for x2 in x2_list:
-        for x3 in x3_list:
-            for x4 in x4_list:
-                for u in u_list:
+    visited = set()
+    state_start = (x1_eq, x2_eq, x3_eq, x4_eq)
+    queue = [state_start]
+    while queue:
+        actual = queue.pop(0)
+        if actual not in visited:
+            visited.add(actual)
+            queue.extend(generateAdjacentNodes(actual))
 
-                    x_k = np.array([x1, x2, x3, x4]).reshape((4, 1))
-                    x_k_1 = np.add(np.matmul(A, x_k), B * u)
+    time_end = time.time()
 
-                    if x_k_1[0] < x1_min:
-                        x1_below.add(tuple(x_k_1[0]))
-                        num_x1_below += 1
+    # print("number of transitions: ", num_transitions)
+    print("number of states: ", len(visited))
+    print("number of state combinations: ", x1_num * x2_num * x3_num * x4_num)
+    print("execution time: ", time_end - time_start)
 
-                    if x_k_1[0] > x1_max:
-                        x1_above.add(tuple(x_k_1[0]))
-                        num_x1_above += 1
+def generateAdjacentNodes(x_k):
+    states = []
+    
+    for u in u_list:
+        x_k = np.array([x_k[0], x_k[1], x_k[2], x_k[3]]).reshape((4, 1))
+        x_k_1 = np.add(np.matmul(A, x_k), B * u)
 
-                    if x_k_1[1] < x2_min:
-                        x2_below.add(tuple(x_k_1[1]))
-                        num_x2_below += 1
+        if (x_k_1[0] >= x1_min and x_k_1[0] <= x1_max) \
+            and (x_k_1[1] >= x2_min and x_k_1[1] <= x2_max) \
+            and (x_k_1[2] >= x3_min and x_k_1[2] <= x3_max) \
+            and (x_k_1[3] >= x4_min and x_k_1[3] <= x4_max):
+            
+            x_k_1[0] = min(x1_list, key=lambda x:abs(x-x_k_1[0]))
+            x_k_1[1] = min(x2_list, key=lambda x:abs(x-x_k_1[1]))
+            x_k_1[2] = min(x3_list, key=lambda x:abs(x-x_k_1[2]))
+            x_k_1[3] = min(x4_list, key=lambda x:abs(x-x_k_1[3]))
 
-                    if x_k_1[1] > x2_max:
-                        x2_above.add(tuple(x_k_1[1]))
-                        num_x2_above += 1
+            states.append(tuple(map(tuple, x_k_1)))
+            # num_transitions += 1
+            # print("x_k_1: \n", x_k_1)
+    
+    print("x_k: \n", x_k)
+    for elem in states:
+        print("state: ", elem)
+    return states
 
-                    if x_k_1[2] < x3_min:
-                        x3_below.add(tuple(x_k_1[2]))
-                        num_x3_below += 1
 
-                    if x_k_1[2] > x3_max:
-                        x3_above.add(tuple(x_k_1[2]))
-                        num_x3_above += 1
 
-                    if x_k_1[3] < x4_min:
-                        x4_below.add(tuple(x_k_1[3]))
-                        num_x4_below += 1
+def generateGraph():
 
-                    if x_k_1[3] > x4_max:
-                        x4_above.add(tuple(x_k_1[3]))
-                        num_x4_above += 1
+    states, x1_below, x1_above, x2_below, x2_above, x3_below, x3_above, x4_below, x4_above = set(), set(),set(), set(), set(), set(), set(), set(), set()
+    num_transitions, num_x1_below, num_x1_above, num_x2_below, num_x2_above, num_x3_below, num_x3_above, num_x4_below, num_x4_above = 0, 0, 0, 0, 0, 0, 0, 0, 0
 
-                    if (x_k_1[0] >= x1_min and x_k_1[0] <= x1_max) \
-                        and (x_k_1[1] >= x2_min and x_k_1[1] <= x2_max) \
-                        and (x_k_1[2] >= x3_min and x_k_1[2] <= x3_max) \
-                        and (x_k_1[3] >= x4_min and x_k_1[3] <= x4_max):
-                        
-                        x_k_1[0] = min(x1_list, key=lambda x:abs(x-x_k_1[0]))
-                        x_k_1[1] = min(x2_list, key=lambda x:abs(x-x_k_1[1]))
-                        x_k_1[2] = min(x3_list, key=lambda x:abs(x-x_k_1[2]))
-                        x_k_1[3] = min(x4_list, key=lambda x:abs(x-x_k_1[3]))
-                        
-                        states.add(tuple(map(tuple, x_k_1)))
-                        num_transitions += 1
-                
-end = time.time()
+    start = time.time()
 
-print("x_k: \n", x_k)
-print("a: \n", np.matmul(A, x_k))
-print("b: \n", B * u)
+    for x1 in x1_list:
+        for x2 in x2_list:
+            for x3 in x3_list:
+                for x4 in x4_list:
+                    for u in u_list:
 
-# for elem in sorted(states):
-#     print(elem)
+                        x_k = np.array([x1, x2, x3, x4]).reshape((4, 1))
+                        x_k_1 = np.add(np.matmul(A, x_k), B * u)
 
-print("number of transitions: ", num_transitions)
-print("number of states: ", len(states))
-print("number of state combinations: ", x1_num * x2_num * x3_num * x4_num)
+                        if x_k_1[0] < x1_min:
+                            x1_below.add(tuple(x_k_1[0]))
+                            num_x1_below += 1
 
-print("possible x1 states: ", x1_list)
-print("possible x2 states: ", x2_list)
-print("possible x3 states: ", x3_list)
-print("possible x4 states: ", x4_list)
-print("num x1 below: ", num_x1_below, len(x1_below), ", num x1 above: ", num_x1_above, len(x1_above))
-print("num x2 below: ", num_x2_below, len(x2_below), ", num x2 above: ", num_x2_above, len(x2_above))
-print("num x3 below: ", num_x3_below, len(x3_below), ", num x3 above: ", num_x3_above, len(x3_above))
-print("num x4 below: ", num_x4_below, len(x4_below), ", num x4 above: ", num_x4_above, len(x4_above))
+                        if x_k_1[0] > x1_max:
+                            x1_above.add(tuple(x_k_1[0]))
+                            num_x1_above += 1
 
-print("execution time: ", end - start) 
+                        if x_k_1[1] < x2_min:
+                            x2_below.add(tuple(x_k_1[1]))
+                            num_x2_below += 1
 
-# print("x1 below: ", sorted(x1_below))
-# print("x1 above: ", sorted(x1_above))
-# print("x2 below: ", sorted(x2_below))
-# print("x2 above: ", sorted(x2_above))
-# print("x3 below: ", sorted(x3_below))
-# print("x3 above: ", sorted(x3_above))
-# print("x4 below: ", sorted(x4_below))
-# print("x4 above: ", sorted(x4_above))
+                        if x_k_1[1] > x2_max:
+                            x2_above.add(tuple(x_k_1[1]))
+                            num_x2_above += 1
 
-# for elem in sorted(x1_below):
-#     print(elem)
-# for elem in sorted(x1_above):
-#     print(elem)
+                        if x_k_1[2] < x3_min:
+                            x3_below.add(tuple(x_k_1[2]))
+                            num_x3_below += 1
+
+                        if x_k_1[2] > x3_max:
+                            x3_above.add(tuple(x_k_1[2]))
+                            num_x3_above += 1
+
+                        if x_k_1[3] < x4_min:
+                            x4_below.add(tuple(x_k_1[3]))
+                            num_x4_below += 1
+
+                        if x_k_1[3] > x4_max:
+                            x4_above.add(tuple(x_k_1[3]))
+                            num_x4_above += 1
+
+                        if (x_k_1[0] >= x1_min and x_k_1[0] <= x1_max) \
+                            and (x_k_1[1] >= x2_min and x_k_1[1] <= x2_max) \
+                            and (x_k_1[2] >= x3_min and x_k_1[2] <= x3_max) \
+                            and (x_k_1[3] >= x4_min and x_k_1[3] <= x4_max):
+                            
+                            x_k_1[0] = min(x1_list, key=lambda x:abs(x-x_k_1[0]))
+                            x_k_1[1] = min(x2_list, key=lambda x:abs(x-x_k_1[1]))
+                            x_k_1[2] = min(x3_list, key=lambda x:abs(x-x_k_1[2]))
+                            x_k_1[3] = min(x4_list, key=lambda x:abs(x-x_k_1[3]))
+                            
+                            states.add(tuple(map(tuple, x_k_1)))
+                            num_transitions += 1
+                    
+    end = time.time()
+
+    print("x_k: \n", x_k)
+    print("a: \n", np.matmul(A, x_k))
+    print("b: \n", B * u)
+
+    print("number of transitions: ", num_transitions)
+    print("number of states: ", len(states))
+    print("number of state combinations: ", x1_num * x2_num * x3_num * x4_num)
+
+    print("possible x1 states: ", x1_list)
+    print("possible x2 states: ", x2_list)
+    print("possible x3 states: ", x3_list)
+    print("possible x4 states: ", x4_list)
+    print("num x1 below: ", num_x1_below, len(x1_below), ", num x1 above: ", num_x1_above, len(x1_above))
+    print("num x2 below: ", num_x2_below, len(x2_below), ", num x2 above: ", num_x2_above, len(x2_above))
+    print("num x3 below: ", num_x3_below, len(x3_below), ", num x3 above: ", num_x3_above, len(x3_above))
+    print("num x4 below: ", num_x4_below, len(x4_below), ", num x4 above: ", num_x4_above, len(x4_above))
+
+    print("execution time: ", end - start) 
+
+generateGraphBFS()
