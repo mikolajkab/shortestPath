@@ -3,32 +3,32 @@ import time
 import math
 
 # position [m]
-x1_min = -0.5
-x1_max = 0.5
-x1_num = 5
+x1_min = -1.2
+x1_max = 1.2
+x1_num = 21
 
 # speed [m/s]
-x2_min = -1
-x2_max = 1
-x2_num = 5
+x2_min = -.55
+x2_max = .55
+x2_num = 21
 
 # angle [rad]
-x3_min = -4
-x3_max = 4
-x3_num = 5
+x3_min = -.25
+x3_max = .25
+x3_num = 21
 
 # angular velocity [rad/s]
-x4_min = -1
-x4_max = 1
-x4_num = 5
+x4_min = -1.5
+x4_max = 1.5
+x4_num = 21
 
 # force [N]
-u_min = -5
-u_max = 5
-u_num = 5
+u_min = -1
+u_max = 1
+u_num = 21
 
 # sampling time [s]
-dt = 0.01
+dt = .25
 
 # matrix coefficients continuous time
 a12c = 1
@@ -63,11 +63,17 @@ x3_list = [round(x,10) for x in x3_list]
 x4_list = [round(x,10) for x in x4_list]
 u_list  = [round(x,10) for x in u_list]
 
-x1_eq = x1_list[math.ceil(len(x1_list)/2)]
-x2_eq = x1_list[math.ceil(len(x2_list)/2)]
-x3_eq = x1_list[math.ceil(len(x3_list)/2)]
-x4_eq = x1_list[math.ceil(len(x4_list)/2)]
-u_eq  = u_list[math.ceil(len(u_list)/2)]
+print("x1_list: ", x1_list)
+print("x2_list: ", x2_list)
+print("x3_list: ", x3_list)
+print("x4_list: ", x4_list)
+print("u_list: " , u_list)
+
+x1_eq = x1_list[math.floor(len(x1_list)/2)]
+x2_eq = x2_list[math.floor(len(x2_list)/2)]
+x3_eq = x3_list[math.floor(len(x3_list)/2)]
+x4_eq = x4_list[math.floor(len(x4_list)/2)]
+u_eq  = u_list[math.floor(len(u_list)/2)]
 
 states, x1_below, x1_above, x2_below, x2_above, x3_below, x3_above, x4_below, x4_above = set(), set(),set(), set(), set(), set(), set(), set(), set()
 num_transitions, num_x1_below, num_x1_above, num_x2_below, num_x2_above, num_x3_below, num_x3_above, num_x4_below, num_x4_above = 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -79,6 +85,7 @@ def generateGraphBFS():
     visited = set()
     state_start = (x1_eq, x2_eq, x3_eq, x4_eq)
     queue = [state_start]
+
     while queue:
         actual = queue.pop(0)
         if actual not in visited:
@@ -89,33 +96,44 @@ def generateGraphBFS():
 
     # print("number of transitions: ", num_transitions)
     print("number of states: ", len(visited))
+    # print("visited states: ", visited)
+    # for elem in visited:
+    #     print("state: ", elem)
     print("number of state combinations: ", x1_num * x2_num * x3_num * x4_num)
     print("execution time: ", time_end - time_start)
 
 def generateAdjacentNodes(x_k):
+    # print("x_k: \n", x_k)
+
     states = []
     
     for u in u_list:
         x_k = np.array([x_k[0], x_k[1], x_k[2], x_k[3]]).reshape((4, 1))
         x_k_1 = np.add(np.matmul(A, x_k), B * u)
 
+        # print("u: ", u)
+        # print("x_k_1: ", x_k_1)
+
         if (x_k_1[0] >= x1_min and x_k_1[0] <= x1_max) \
             and (x_k_1[1] >= x2_min and x_k_1[1] <= x2_max) \
             and (x_k_1[2] >= x3_min and x_k_1[2] <= x3_max) \
             and (x_k_1[3] >= x4_min and x_k_1[3] <= x4_max):
-            
+
             x_k_1[0] = min(x1_list, key=lambda x:abs(x-x_k_1[0]))
             x_k_1[1] = min(x2_list, key=lambda x:abs(x-x_k_1[1]))
             x_k_1[2] = min(x3_list, key=lambda x:abs(x-x_k_1[2]))
             x_k_1[3] = min(x4_list, key=lambda x:abs(x-x_k_1[3]))
 
-            states.append(tuple(map(tuple, x_k_1)))
+            # x_k_1 = tuple(x_k_1)
+            # print("x_k_1: ", x_k_1)
+
+            if not np.array_equal(x_k_1,x_k):
+                states.append(tuple(map(tuple, x_k_1)))
             # num_transitions += 1
             # print("x_k_1: \n", x_k_1)
     
-    print("x_k: \n", x_k)
-    for elem in states:
-        print("state: ", elem)
+    # for elem in states:
+    #     print("state: ", elem)
     return states
 
 
