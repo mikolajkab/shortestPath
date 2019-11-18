@@ -95,7 +95,7 @@ def generateGraphBFS():
 
     time_end = time.time()
 
-    # print("number of transitions: ", num_transitions)
+    print("number of transitions: ", num_transitions)
     print("number of states: ", len(visited))
     # print("visited states: ", visited)
     # for elem in sorted(visited):
@@ -107,7 +107,8 @@ def generateAdjacentNodes(x_k):
     # print("x_k: \n", x_k)
 
     states = []
-    
+    states_t = set()
+
     for u in u_list:
         # x_k = np.matrix([x_k[0], x_k[1], x_k[2], x_k[3]])
         x_k_1 = np.add(np.matmul(A, x_k), B * u)
@@ -129,8 +130,12 @@ def generateAdjacentNodes(x_k):
             # print("x_k_1: ", x_k_1)
 
             # if x_k_1 not in states:
-            states.append(x_k_1)
-            # num_transitions += 1
+            x_k_1_t = tuple(np.asarray(x_k_1).ravel())
+            if x_k_1_t not in states_t:
+                states.append(x_k_1)
+                states_t.add(x_k_1_t)
+                global num_transitions
+                num_transitions += 1
             # print("x_k_1: \n", x_k_1)
     
     # for elem in states:
