@@ -88,7 +88,9 @@ def generateGraphBFS():
 
     while queue:
         actual = queue.pop(0)
-        actual_t = tuple(np.asarray(actual).ravel())
+        # actual_t = tuple(np.asarray(actual).ravel())
+        actual_t = (actual.item(0), actual.item(1), actual.item(2), actual.item(3))
+
         if actual_t not in visited:
             visited.add(actual_t)
             queue.extend(generateAdjacentNodes(actual))
@@ -130,7 +132,8 @@ def generateAdjacentNodes(x_k):
             # print("x_k_1: ", x_k_1)
 
             # if x_k_1 not in states:
-            x_k_1_t = tuple(np.asarray(x_k_1).ravel())
+            x_k_1_t = (x_k_1.item(0), x_k_1.item(1), x_k_1.item(2), x_k_1.item(3))
+            
             if x_k_1_t not in states_t:
                 states.append(x_k_1)
                 states_t.add(x_k_1_t)
