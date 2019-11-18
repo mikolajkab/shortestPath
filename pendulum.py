@@ -5,27 +5,27 @@ import math
 # position [m]
 x1_min = -1.2
 x1_max = 1.2
-x1_num = 21
+x1_num = 11
 
 # speed [m/s]
 x2_min = -.55
 x2_max = .55
-x2_num = 21
+x2_num = 11
 
 # angle [rad]
 x3_min = -.25
 x3_max = .25
-x3_num = 21
+x3_num = 11
 
 # angular velocity [rad/s]
 x4_min = -1.5
 x4_max = 1.5
-x4_num = 21
+x4_num = 11
 
 # force [N]
 u_min = -1
 u_max = 1
-u_num = 21
+u_num = 11
 
 # sampling time [s]
 dt = .25
@@ -40,12 +40,12 @@ b2c  = 1.818
 b4c  = 4.545
 
 # matrices discrete time
-A = np.array([[1,   dt,         0,          0     ],
+A = np.matrix([[1,   dt,         0,          0     ],
               [0,   1+dt*a22c,  dt*a23c,    0     ],
               [0,   0,          1,          dt    ],
               [0,   dt*a42c,    dt*a43c,    1     ]])
 
-B = np.array( [0,    dt*b2c,    0,          dt*b4c]).reshape((4, 1))
+B = np.matrix( [0,    dt*b2c,    0,          dt*b4c]).reshape((4, 1))
 
 print("A: \n", A)
 print("B: \n", B)
@@ -83,13 +83,14 @@ def generateGraphBFS():
     time_start = time.time()
 
     visited = set()
-    state_start = (x1_eq, x2_eq, x3_eq, x4_eq)
+    state_start = np.matrix([[x1_eq], [x2_eq], [x3_eq], [x4_eq]])
     queue = [state_start]
 
     while queue:
         actual = queue.pop(0)
-        if actual not in visited:
-            visited.add(actual)
+        actual_t = tuple(np.asarray(actual).ravel())
+        if actual_t not in visited:
+            visited.add(actual_t)
             queue.extend(generateAdjacentNodes(actual))
 
     time_end = time.time()
@@ -97,7 +98,7 @@ def generateGraphBFS():
     # print("number of transitions: ", num_transitions)
     print("number of states: ", len(visited))
     # print("visited states: ", visited)
-    # for elem in visited:
+    # for elem in sorted(visited):
     #     print("state: ", elem)
     print("number of state combinations: ", x1_num * x2_num * x3_num * x4_num)
     print("execution time: ", time_end - time_start)
@@ -108,7 +109,7 @@ def generateAdjacentNodes(x_k):
     states = []
     
     for u in u_list:
-        x_k = np.array([x_k[0], x_k[1], x_k[2], x_k[3]]).reshape((4, 1))
+        # x_k = np.matrix([x_k[0], x_k[1], x_k[2], x_k[3]])
         x_k_1 = np.add(np.matmul(A, x_k), B * u)
 
         # print("u: ", u)
@@ -127,8 +128,8 @@ def generateAdjacentNodes(x_k):
             # x_k_1 = tuple(x_k_1)
             # print("x_k_1: ", x_k_1)
 
-            if not np.array_equal(x_k_1,x_k):
-                states.append(tuple(map(tuple, x_k_1)))
+            # if x_k_1 not in states:
+            states.append(x_k_1)
             # num_transitions += 1
             # print("x_k_1: \n", x_k_1)
     
@@ -220,4 +221,4 @@ def generateGraph():
 
     print("execution time: ", end - start) 
 
-generateGraph()
+generateGraphBFS()
