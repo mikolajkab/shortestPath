@@ -220,4 +220,4 @@ def generateGraph():
 
     print("execution time: ", end - start) 
 
-generateGraphBFS()
+generateGraph()
