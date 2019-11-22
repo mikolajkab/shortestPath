@@ -41,13 +41,13 @@ time = np.linspace(0, 2, nsteps, endpoint=True)
 xk = np.matrix(".2 ; 0 ; .2 ; 0")
 
 X = []
-T = []
+T2 = []
 U = []
 
 for t in time:
     uk = K*xk
     X.append(xk[0,0])
-    T.append(xk[2,0])
+    T2.append(xk[2,0])
     v = xk[1,0]
     force = uk[0,0]
     accel = force/(M+m)
@@ -56,7 +56,7 @@ for t in time:
     xk = A*xk + B*uk
 
 plt.plot(time, X, label="cart position, meters")
-plt.plot(time, T, label='pendulum angle, radians')
+plt.plot(time, T2, label='pendulum angle, radians')
 plt.plot(time, U, label='control voltage, decavolts')
 
 plt.legend(loc='upper right')

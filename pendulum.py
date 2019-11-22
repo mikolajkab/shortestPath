@@ -5,24 +5,28 @@ import time
 import math
 import scipy.linalg
 import matplotlib.pyplot as plt
+from collections import defaultdict
 
 def generate_qraph():
 
-    graph = {}
+    graph = defaultdict(dict)
     time_start = time.time()
 
     visited = set()
-    queue = [np.matrix([[x1_eq], [x2_eq], [x3_eq], [x4_eq]])]
+    # queue = [np.matrix([[x1_eq], [x2_eq], [x3_eq], [x4_eq]])]
+    queue = [(x1_eq, x2_eq, x3_eq, x4_eq)]
 
     while queue:
         actual = queue.pop(0)
-        actual_tup = (actual.item(0), actual.item(1), actual.item(2), actual.item(3))
+        # actual_tup = (actual.item(0), actual.item(1), actual.item(2), actual.item(3))
 
-        if actual_tup not in visited:
-            visited.add(actual_tup)
-            adjacet_nodes = generate_adjacent_nodes(actual)
+        if actual not in visited:
+            visited.add(actual)
+            adjacet_nodes, costs = generate_adjacent_nodes(actual)
             queue.extend(adjacet_nodes)
-            graph[actual_tup] = adjacet_nodes
+
+            for node, cost in zip(adjacet_nodes, costs):
+                graph[actual][node] = cost
 
     time_end = time.time()
 
@@ -37,11 +41,14 @@ def generate_qraph():
     for key, val in graph.items():
         print(key, val)
 
-def generate_adjacent_nodes(x_k):
+def generate_adjacent_nodes(actual):
     # print("x_k: \n", x_k)
 
     states = []
-    states_set = set()
+    costs = []
+    global num_transitions
+
+    x_k = np.matrix([[actual[0]], [actual[1]], [actual[2]], [actual[3]]])
 
     for u in u_list:
         x_k_1 = np.add(np.matmul(A, x_k), B * u)
@@ -69,17 +76,18 @@ def generate_adjacent_nodes(x_k):
             # if x_k_1 not in states:
             x_k_1_tup = (x_k_1.item(0), x_k_1.item(1), x_k_1.item(2), x_k_1.item(3))
             
-            if x_k_1_tup not in states_set:
-                states.append(x_k_1)
-                states_set.add(x_k_1_tup)
-                global num_transitions
+            if x_k_1_tup not in states:
+                states.append(x_k_1_tup)
+                cost = x_k_1.T*Q*x_k_1 + u.T*R*u
+                costs.append(cost.item(0))
+
                 num_transitions += 1
 
             # print("x_k_1: \n", x_k_1)
     
     # for elem in states:
     #     print("state: ", elem)
-    return states
+    return states, costs
 
 def dlqr(A,B,Q,R):
     """
@@ -104,7 +112,7 @@ def solve_lqr():
     X = []
     T = []
 
-    for t in t_list:
+    for _ in range(t_list):
         uk = K*xk
         X.append(xk[0,0])
         T.append(xk[2,0])
