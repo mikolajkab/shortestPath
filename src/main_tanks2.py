@@ -58,8 +58,8 @@ def generate_adjacent_nodes(actual):
             x2_k1 = c21*x2_k + c22*math.sqrt(x1_k) + c23*math.sqrt(x2_k) + c24*u2
 
             # round to closest state
-            x1_k_1 = round(x1_k1, 4)
-            x2_k_1 = round(x2_k1, 4)
+            x1_k_1 = round(take_closest(x1_list, x1_k1), 4)
+            x2_k_1 = round(take_closest(x2_list, x2_k1), 4)
 
             # check if x_k_1 is within allowed ranges
             if      (x1_k_1 >= x1_min and x1_k_1 <= x1_max) \

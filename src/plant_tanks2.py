@@ -4,10 +4,10 @@ import numpy as np
 import math
 
 # # h1 [m]
-x1_min, x1_max, x1_num = .4, .6, 1001
+x1_min, x1_max, x1_num = .4, .6, 401
 
 # # h2 [m]
-x2_min, x2_max, x2_num = .6, .8, 1001
+x2_min, x2_max, x2_num = .6, .8, 401
 
 # # Q1 [N]
 u1_min, u1_max, u1_num = 0, .4, 11
@@ -19,7 +19,7 @@ initial_state = (.6, .8)
 end_state = (.4, .6)
 
 # input data [m]
-A1, A2, Ap1, Ap2, ro, g, dt = .5, 1.5, .1, .2, .5, 9.81, 0.01
+A1, A2, Ap1, Ap2, ro, g, dt = .5, 1.5, .1, .2, .5, 9.81, 0.005
 
 # nonlinear discrete equations:
 # x1(k+1) = x1(k) - dt*Ap1/A1*sqrt(2*g)*sqrt(x1(k)) + dt/(ro*A1)*u1(k)
