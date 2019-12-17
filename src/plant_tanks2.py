@@ -3,23 +3,23 @@
 import numpy as np 
 import math
 
-# # h1 [m]
-x1_min, x1_max, x1_num = .4, .6, 401
+# h1 [m]
+x1_min, x1_max, x1_num = .0, .22, 221
 
-# # h2 [m]
-x2_min, x2_max, x2_num = .6, .8, 401
+# h2 [m]
+x2_min, x2_max, x2_num = .0, .22, 221
 
-# # Q1 [N]
-u1_min, u1_max, u1_num = 0, .4, 11
+# Q1 [N]
+u1_min, u1_max, u1_num = -1, 1, 41
 
-# # Q2 [N]
-u2_min, u2_max, u2_num = 0, .5, 11
+# Q2 [N]
+u2_min, u2_max, u2_num = -1, 1, 41
 
-initial_state = (.6, .8)
-end_state = (.4, .6)
+initial_state = (.2, .2)
+end_state = (0, 0)
 
 # input data [m]
-A1, A2, Ap1, Ap2, ro, g, dt = .5, 1.5, .1, .2, .5, 9.81, 0.005
+A1, A2, Ap1, Ap2, ro, g, dt = .5, 1.5, .1, .2, .5, 9.81, 0.01
 
 # nonlinear discrete equations:
 # x1(k+1) = x1(k) - dt*Ap1/A1*sqrt(2*g)*sqrt(x1(k)) + dt/(ro*A1)*u1(k)
@@ -116,10 +116,6 @@ t_list  = np.linspace(t_min, t_max, t_num)
 t_list_lqr = t_list
 
 num_transitions = 0
-below_x1_min = 0
-above_x1_max = 0
-below_x2_min = 0
-above_x2_max = 0
 
 print("Ac: ", Ac)
 print("Bc: ", Bc)

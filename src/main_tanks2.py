@@ -28,7 +28,7 @@ def generate_qraph():
 
         # print("queue: " , queue)
 
-    print("states: ", sorted(visited))
+    # print("states: ", sorted(visited))
     # print("states: ", list(sorted(visited))[0])
     print("number of states: ", len(visited))
     print("number of possible states: ", len(x1_list)*len(x2_list))
@@ -58,8 +58,8 @@ def generate_adjacent_nodes(actual):
             x2_k1 = c21*x2_k + c22*math.sqrt(x1_k) + c23*math.sqrt(x2_k) + c24*u2
 
             # round to closest state
-            x1_k_1 = round(take_closest(x1_list, x1_k1), 4)
-            x2_k_1 = round(take_closest(x2_list, x2_k1), 4)
+            x1_k_1 = round(x1_k1, 3)
+            x2_k_1 = round(x2_k1, 3)
 
             # check if x_k_1 is within allowed ranges
             if      (x1_k_1 >= x1_min and x1_k_1 <= x1_max) \
@@ -144,10 +144,10 @@ x1_lqr, x2_lqr, u1_lqr, u2_lqr = solve_lqr(lqr_initial_state)
 
 h1_lqr = [i+end_state[0] for i in x1_lqr]
 h2_lqr = [i+end_state[1] for i in x2_lqr]
-q3_lqr = [ro*Ap1*math.sqrt(2*g*i) for i in h1_lqr]
-q4_lqr = [ro*Ap2*math.sqrt(2*g*i) for i in h2_lqr]
-q1_lqr = [i + ro*A1*j for i,j in zip(q3_lqr, x1_lqr)]
-q2_lqr = [i - j + ro*A2*k for i,j,k in zip(q4_lqr, q3_lqr, x2_lqr)]
+# q3_lqr = [ro*Ap1*math.sqrt(2*g*i) for i in h1_lqr]
+# q4_lqr = [ro*Ap2*math.sqrt(2*g*i) for i in h2_lqr]
+# q1_lqr = [i + ro*A1*j for i,j in zip(q3_lqr, x1_lqr)]
+# q2_lqr = [i - j + ro*A2*k for i,j,k in zip(q4_lqr, q3_lqr, x2_lqr)]
 
 u1_lqr = [i for i in u1_lqr]
 u2_lqr = [i for i in u2_lqr]
@@ -177,11 +177,11 @@ if path != "Route Not Possible":
 
 plt.plot(t_list_lqr, h1_lqr, label="h1 lqr [m]]")
 plt.plot(t_list_lqr, h2_lqr, label='h2 lqr [m]')
-# plt.plot(t_list_lqr, u1_lqr, label='u1 lqr [100*kg/s]')
-# plt.plot(t_list_lqr, u2_lqr, label='u2 lqr [100*kg/s]')
+plt.plot(t_list_lqr, u1_lqr, label='u1 lqr [100*kg/s]')
+plt.plot(t_list_lqr, u2_lqr, label='u2 lqr [100*kg/s]')
 
-plt.plot(t_list_lqr, q1_lqr, label='q1 lqr [100*kg/s]')
-plt.plot(t_list_lqr, q2_lqr, label='q2 lqr [100*kg/s]')
+# plt.plot(t_list_lqr, q1_lqr, label='q1 lqr [100*kg/s]')
+# plt.plot(t_list_lqr, q2_lqr, label='q2 lqr [100*kg/s]')
 # plt.plot(t_list_lqr, q3_lqr, label='q3 lqr [100*kg/s]')
 # plt.plot(t_list_lqr, q4_lqr, label='q4 lqr [100*kg/s]')
 
