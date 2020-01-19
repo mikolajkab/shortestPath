@@ -10,10 +10,10 @@ x1_min, x1_max, x1_num = .0, .22, 221
 x2_min, x2_max, x2_num = .0, .22, 221
 
 # Q1 [N]
-u1_min, u1_max, u1_num = -1, 0, 21
+u1_min, u1_max, u1_num = 0, 1, 21
 
 # Q2 [N]
-u2_min, u2_max, u2_num = -1, 0, 21
+u2_min, u2_max, u2_num = 0, 1, 21
 
 initial_state = (.2, .2)
 end_state = (0, 0)
