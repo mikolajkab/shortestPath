@@ -25,7 +25,7 @@ for source=1:N
     t(source, switchEdge) = ind(1:nnz(switchEdge));
 end
 
-w = rand(N*K,1);
+w = randi(100,[N*K,1]);
 h = graph(s,t,w);
 writetable(h.Edges, 'gr.csv')
 end

@@ -1,7 +1,11 @@
 // A C++ program for Bellman-Ford's queue-based single source 
 // shortest path algorithm. 
-#include <bits/stdc++.h> 
+#include <bits/stdc++.h>
+#include <chrono>
+#include <iostream>
+
 using namespace std;
+using namespace std::chrono;
 
 typedef pair<int, int> iPair; 
 typedef pair<list<iPair>, int> liPair; 
@@ -73,6 +77,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src)
 	// Step 2: Relax all edges |V| - 1 times. A simple shortest 
 	// path from src to any other vertex can have at-most |V| - 1 
 	// edges
+	auto start = high_resolution_clock::now(); 
 	while(!node_queue.empty())
 	{
 		node_u_pair = node_queue.front();
@@ -95,36 +100,52 @@ void BellmanFord(shared_ptr<Graph> graph, int src)
 			}
 		}
 	}
+	auto stop = high_resolution_clock::now(); 
 
 	// Print shortest distances stored in dist[] 
 	printf("Vertex Distance from Source\n"); 
 	for (int i = 0; i < graph->nodes.size(); ++i) 
 		printf("%d \t\t %d\n", i, dist[i]); 
 
+	auto duration = duration_cast<milliseconds>(stop - start);
+	cout << "duration :" << duration.count() << endl;
 	return; 
 } 
+
+shared_ptr<Graph> create_graph()
+{
+	shared_ptr<Graph> graph = make_shared<Graph>();
+
+	fstream fin;
+	fin.open("../matlab/gr.csv", ios::in);
+
+	vector<int> row;
+	string line, word;
+	getline(fin,line);
+
+	while (!fin.eof())
+	{
+		row.clear();
+		getline(fin, line);
+		stringstream s(line);
+
+		while (getline(s, word, ','))  
+		{
+			row.push_back(stoi(word));
+		}
+		graph->addEdge(row[0]-1, row[1]-1, row[2]);
+	}
+
+	return graph;
+}
 
 // Driver program to test above functions 
 int main()
 { 
-	shared_ptr<Graph> graph = make_shared<Graph>(); 
+	shared_ptr<Graph> graph;
+	graph = create_graph();
 
-	graph->addEdge(0, 1, 4); 
-	graph->addEdge(0, 7, 8); 
-	graph->addEdge(1, 2, 8); 
-	graph->addEdge(1, 7, 11); 
-	graph->addEdge(2, 3, 7); 
-	graph->addEdge(2, 8, 2); 
-	graph->addEdge(2, 5, 4); 
-	graph->addEdge(3, 4, 9); 
-	graph->addEdge(3, 5, 14); 
-	graph->addEdge(4, 5, 10); 
-	graph->addEdge(5, 6, 2); 
-	graph->addEdge(6, 7, 1); 
-	graph->addEdge(6, 8, 6); 
-	graph->addEdge(7, 8, 7); 
-
-	BellmanFord(graph, 0);
+	BellmanFord(graph, 312);
 
 	return 0; 
 } 
