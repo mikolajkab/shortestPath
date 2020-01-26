@@ -1,8 +1,11 @@
 // Program to find Dijkstra's shortest path using 
 // priority_queue in STL 
 #include<bits/stdc++.h> 
+#include <chrono>
+#include <fstream>
+
 using namespace std; 
-# define INF 0x3f3f3f3f 
+using namespace std::chrono;
 
 // iPair ==> Integer Pair 
 typedef pair<int, int> iPair; 
@@ -11,55 +14,54 @@ typedef pair<int, int> iPair;
 // adjacency list representation 
 class Graph 
 { 
-	int V; // No. of vertices 
-
-	// In a weighted graph, we need to store vertex 
-	// and weight pair for every edge 
-	std::vector<list<iPair> > adjLists; 
-
 public: 
-	Graph(int V); // Constructor 
+	Graph(); 
 
-	// function to add an edge to graph 
 	void addEdge(int u, int v, int w); 
 
-	// prints shortest path from s 
-	void shortestPath(int s); 
+	vector<list<iPair> > nodes; 
 }; 
 
-// Allocates memory for adjacency list 
-Graph::Graph(int V) 
+Graph::Graph() 
 { 
-	this->V = V;
-	adjLists.resize(V);
 } 
 
 void Graph::addEdge(int u, int v, int w)
 { 
-	adjLists[u].push_back(make_pair(v, w)); 
-	adjLists[v].push_back(make_pair(u, w)); 
+	if (u >= nodes.size())
+	{
+		nodes.resize(u+1);
+	}
+	if (v >= nodes.size())
+	{
+		nodes.resize(v+1);
+	}
+
+	nodes[u].push_back(make_pair(v, w)); 
+	nodes[v].push_back(make_pair(u, w)); 
 } 
 
 // Prints shortest paths from src to all other vertices 
-void Graph::shortestPath(int src) 
-{ 
+void shortestPath(shared_ptr<Graph> graph, int src) 
+{
+	vector<int> dist(graph->nodes.size(), INT_MAX); 
+
 	// Create a priority queue to store vertices that 
-	// are being preprocessed. This is weird syntax in C++. 
-	// Refer below link for details of this syntax 
-	// https://www.geeksforgeeks.org/implement-min-heap-using-stl/ 
+    // are being preprocessed. This is weird syntax in C++. 
+    // Refer below link for details of this syntax 
+    // https://www.geeksforgeeks.org/implement-min-heap-using-stl/
 	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
 
-	// Create a vector for distances and initialize all 
-	// distances as infinite (INF) 
-	vector<int> dist(V, INF); 
-
 	// Insert source itself in priority queue and initialize 
-	// its distance as 0. 
+	// its distance as 0.
 	pq.push(make_pair(0, src)); 
 	dist[src] = 0; 
 
+	list<iPair>::iterator i;
+	
 	/* Looping till priority queue becomes empty (or all 
 	distances are not finalized) */
+	auto start = high_resolution_clock::now();
 	while (!pq.empty()) 
 	{ 
 		// The first vertex in pair is the minimum distance 
@@ -72,8 +74,7 @@ void Graph::shortestPath(int src)
 		pq.pop(); 
 
 		// 'i' is used to get all adjacent vertices of a vertex 
-		list<iPair>::iterator i; 
-		for (i = adjLists[u].begin(); i != adjLists[u].end(); ++i) 
+		for (i = graph->nodes[u].begin(); i != graph->nodes[u].end(); ++i) 
 		{ 
 			// Get vertex label and weight of current adjacent 
 			// of u. 
@@ -89,37 +90,71 @@ void Graph::shortestPath(int src)
 			} 
 		} 
 	} 
+	auto stop = high_resolution_clock::now(); 
 
 	// Print shortest distances stored in dist[] 
-	printf("Vertex Distance from Source\n"); 
-	for (int i = 0; i < V; ++i) 
-		printf("%d \t\t %d\n", i, dist[i]); 
+	ofstream myfile ("dijkstra.txt");
+  	if (myfile.is_open())
+  	{
+		for (int i = 0; i < graph->nodes.size(); ++i) 
+			myfile << i << "\t\t" << dist[i] <<"\n"; 
+    	myfile.close();
+  	}
+  	else cout << "Unable to open file";
+
+	auto duration = duration_cast<milliseconds>(stop - start);
+	cout << "duration :" << duration.count() << endl;
 } 
+
+shared_ptr<Graph> create_graph()
+{
+	shared_ptr<Graph> graph = make_shared<Graph>();
+
+	// graph->addEdge(0, 1, 4);
+	// graph->addEdge(0, 7, 8);
+	// graph->addEdge(1, 2, 8);
+	// graph->addEdge(1, 7, 11);
+	// graph->addEdge(2, 3, 7);
+	// graph->addEdge(2, 8, 2);
+	// graph->addEdge(2, 5, 4);
+	// graph->addEdge(3, 4, 9);
+	// graph->addEdge(3, 5, 14);
+	// graph->addEdge(4, 5, 10);
+	// graph->addEdge(5, 6, 2);
+	// graph->addEdge(6, 7, 1);
+	// graph->addEdge(6, 8, 6);
+	// graph->addEdge(7, 8, 7);
+
+	fstream fin;
+	fin.open("../matlab/gr_100000_5.csv", ios::in);
+
+	vector<int> row;
+	string line, word;
+	getline(fin,line);
+
+	while (!fin.eof())
+	{
+		row.clear();
+		getline(fin, line);
+		stringstream s(line);
+
+		while (getline(s, word, ','))  
+		{
+			row.push_back(stoi(word));
+		}
+		graph->addEdge(row[0]-1, row[1]-1, row[2]);
+	}
+
+	return graph;
+}
 
 // Driver program to test methods of graph class 
 int main() 
 { 
-	// create the graph given in above fugure 
-	int V = 9; 
-	Graph g(V); 
+	shared_ptr<Graph> graph;
+	graph = create_graph();
 
-	// making above shown graph 
-	g.addEdge(0, 1, 4); 
-	g.addEdge(0, 7, 8); 
-	g.addEdge(1, 2, 8); 
-	g.addEdge(1, 7, 11); 
-	g.addEdge(2, 3, 7); 
-	g.addEdge(2, 8, 2); 
-	g.addEdge(2, 5, 4); 
-	g.addEdge(3, 4, 9); 
-	g.addEdge(3, 5, 14); 
-	g.addEdge(4, 5, 10); 
-	g.addEdge(5, 6, 2); 
-	g.addEdge(6, 7, 1); 
-	g.addEdge(6, 8, 6); 
-	g.addEdge(7, 8, 7); 
-
-	g.shortestPath(0); 
+	shortestPath(graph, 0);
 
 	return 0; 
 } 
