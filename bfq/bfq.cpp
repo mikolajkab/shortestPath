@@ -117,7 +117,7 @@ shared_ptr<Graph> create_graph()
 	shared_ptr<Graph> graph = make_shared<Graph>();
 
 	fstream fin;
-	fin.open("../matlab/gr.csv", ios::in);
+	fin.open("../matlab/gr_100000_5.csv", ios::in);
 
 	vector<int> row;
 	string line, word;
