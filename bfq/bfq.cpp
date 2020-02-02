@@ -42,12 +42,13 @@ void Graph::addEdge(int u, int v, int w)
 
 // The main function that finds shortest distances from src to 
 // all other vertices using Bellman-Ford algorithm.
-void BellmanFord(shared_ptr<Graph> graph, int src) 
+void BellmanFord(shared_ptr<Graph> graph, int src, int goal) 
 { 
 	// Step 1: Initialize distances from src to all other vertices 
 	// as INFINITE 
 	vector<int> dist(graph->nodes.size(), INT_MAX);
 	vector<bool>in_queue(graph->nodes.size(), false);
+	vector<int> came_from(graph->nodes.size(), INT_MAX);
 
 	dist[src] = 0;
 
@@ -75,6 +76,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src)
 			if (dist[v] > dist[u] + weight) 
 			{
 				dist[v] = dist[u] + weight;
+				came_from[v] = u;
 
 				if (!in_queue[v])
 				{
@@ -94,6 +96,27 @@ void BellmanFord(shared_ptr<Graph> graph, int src)
 			myfile << i << "\t\t" << dist[i] <<"\n"; 
     	myfile.close();
   	}
+  	else cout << "Unable to open file";
+
+ofstream myfile_path ("bfq_path.txt");
+	if (myfile_path.is_open())
+	{
+		vector<int> path;
+		int current = goal;
+		while(current != src)
+		{
+			path.push_back(current);
+			current = came_from[current];
+		}
+		path.push_back(src);
+		reverse(path.begin(), path.end());
+
+		for (vector<int>::iterator i = path.begin(); i < path.end(); ++i)
+		{
+			myfile_path << *i << "\t\t";
+		}
+    	myfile_path.close();
+	} 
   	else cout << "Unable to open file";
 
 	auto duration = duration_cast<milliseconds>(stop - start);
@@ -148,7 +171,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	BellmanFord(graph, 0);
+	BellmanFord(graph, 0, 11111);
 
 	return 0; 
 } 

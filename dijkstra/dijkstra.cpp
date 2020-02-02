@@ -1,5 +1,4 @@
-// Program to find Dijkstra's shortest path using 
-// priority_queue in STL 
+// Program to find shortest path using Dijkstra algorithm
 #include<bits/stdc++.h> 
 #include <chrono>
 #include <fstream>
@@ -38,18 +37,17 @@ void Graph::addEdge(int u, int v, int w)
 	}
 
 	nodes[u].push_back(make_pair(v, w)); 
-	nodes[v].push_back(make_pair(u, w)); 
+	nodes[v].push_back(make_pair(u, w));
 } 
 
 // Prints shortest paths from src to all other vertices 
-void shortestPath(shared_ptr<Graph> graph, int src) 
+void shortestPath(shared_ptr<Graph> graph, int src, int goal) 
 {
 	vector<int> dist(graph->nodes.size(), INT_MAX); 
+	vector<int> came_from(graph->nodes.size(), INT_MAX);
 
 	// Create a priority queue to store vertices that 
-    // are being preprocessed. This is weird syntax in C++. 
-    // Refer below link for details of this syntax 
-    // https://www.geeksforgeeks.org/implement-min-heap-using-stl/
+    // are being preprocessed.
 	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
 
 	// Insert source itself in priority queue and initialize 
@@ -64,14 +62,17 @@ void shortestPath(shared_ptr<Graph> graph, int src)
 	auto start = high_resolution_clock::now();
 	while (!pq.empty()) 
 	{ 
-		// The first vertex in pair is the minimum distance 
+		// The vertex in the first pair is the minimum distance 
 		// vertex, extract it from priority queue. 
-		// vertex label is stored in second of pair (it 
-		// has to be done this way to keep the vertices 
-		// sorted distance (distance must be first item 
-		// in pair) 
+		// vertex label is stored in second of pair
 		int u = pq.top().second; 
 		pq.pop(); 
+		came_from[src] = src;
+
+		if(u == goal)
+		{
+			break;
+		}
 
 		// 'i' is used to get all adjacent vertices of a vertex 
 		for (i = graph->nodes[u].begin(); i != graph->nodes[u].end(); ++i) 
@@ -87,6 +88,7 @@ void shortestPath(shared_ptr<Graph> graph, int src)
 				// Updating distance of v 
 				dist[v] = dist[u] + weight; 
 				pq.push(make_pair(dist[v], v)); 
+				came_from[v] = u;
 			} 
 		} 
 	} 
@@ -100,6 +102,27 @@ void shortestPath(shared_ptr<Graph> graph, int src)
 			myfile << i << "\t\t" << dist[i] <<"\n"; 
     	myfile.close();
   	}
+  	else cout << "Unable to open file";
+
+	ofstream myfile_path ("dijkstra_path.txt");
+	if (myfile_path.is_open())
+	{
+		vector<int> path;
+		int current = goal;
+		while(current != src)
+		{
+			path.push_back(current);
+			current = came_from[current];
+		}
+		path.push_back(src);
+		reverse(path.begin(), path.end());
+
+		for (vector<int>::iterator i = path.begin(); i < path.end(); ++i)
+		{
+			myfile_path << *i << "\t\t";
+		}
+    	myfile_path.close();
+	} 
   	else cout << "Unable to open file";
 
 	auto duration = duration_cast<milliseconds>(stop - start);
@@ -154,7 +177,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	shortestPath(graph, 0);
+	shortestPath(graph, 0, 10);
 
 	return 0; 
 } 
