@@ -102,9 +102,8 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 				dist[v] = dist[u] + weight; 
 				pq.push(make_pair(dist[v] + heuristic[v], v));
 				came_from[v] = u;
-				// cout << v << "," << heuristic[v] << "\n";
 			} 
-		} 
+		}
 	} 
 	auto stop = high_resolution_clock::now(); 
 
@@ -139,7 +138,7 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	} 
   	else cout << "Unable to open file";
 
-	auto duration = duration_cast<milliseconds>(stop - start);
+	auto duration = duration_cast<microseconds>(stop - start);
 	cout << "duration :" << duration.count() << endl;
 } 
 

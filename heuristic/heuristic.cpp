@@ -73,36 +73,29 @@ void generate_heuristic(shared_ptr<Graph> graph, int src)
 	fstream fout;
 	fout.open("../matlab/h_100000_5.csv", ios::out);
 
-    vector<bool> visited(graph->nodes.size(), false);
 	vector<int> dist(graph->nodes.size(), INT_MAX);
 	vector<int> heuristic(graph->nodes.size(), INT_MAX);
 	
-	visited[src] = true;
 	dist[src] = 0;
 	heuristic[src] = 0;
 	
-	queue<int> q;
-	q.push(src);
+	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
+	pq.push(make_pair(0, src));
 
-	while(!q.empty())
+	while(!pq.empty())
 	{
-		int u = q.front();
-		q.pop();
+		int u = pq.top().second; 
+		pq.pop();
 
 		for(list<iPair>::iterator i = graph->nodes[u].begin(); i != graph->nodes[u].end(); ++i)
 		{
 			int v = (*i).first;
-			int weight = (*i).second; 
-
-			if(!visited[v])
-			{
-				visited[v] = true;
-				q.push(v);
-			}
+			int weight = (*i).second;
 
 			if(dist[v] > dist[u] + weight)
 			{
 				dist[v] = dist[u] + weight;
+				pq.push(make_pair(dist[v], v));
 				heuristic[v] = rand() % weight + dist[u] + 1;
 			}
 		}
@@ -123,7 +116,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	generate_heuristic(graph, 0);
+	generate_heuristic(graph, 10);
 
 	return 0; 
 } 
