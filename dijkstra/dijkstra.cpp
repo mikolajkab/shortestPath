@@ -82,7 +82,7 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 			int v = (*i).first; 
 			int weight = (*i).second; 
 
-			// If there is shorted path to v through u. 
+			// If there is a shorter path to v through u. 
 			if (dist[v] > dist[u] + weight) 
 			{ 
 				// Updating distance of v 
@@ -94,7 +94,7 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	} 
 	auto stop = high_resolution_clock::now(); 
 
-	// Print shortest distances stored in dist[] 
+	// Print shortest distances stored in dist[]
 	ofstream myfile ("dijkstra.txt");
   	if (myfile.is_open())
   	{
@@ -132,21 +132,6 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 shared_ptr<Graph> create_graph()
 {
 	shared_ptr<Graph> graph = make_shared<Graph>();
-
-	// graph->addEdge(0, 1, 4);
-	// graph->addEdge(0, 7, 8);
-	// graph->addEdge(1, 2, 8);
-	// graph->addEdge(1, 7, 11);
-	// graph->addEdge(2, 3, 7);
-	// graph->addEdge(2, 8, 2);
-	// graph->addEdge(2, 5, 4);
-	// graph->addEdge(3, 4, 9);
-	// graph->addEdge(3, 5, 14);
-	// graph->addEdge(4, 5, 10);
-	// graph->addEdge(5, 6, 2);
-	// graph->addEdge(6, 7, 1);
-	// graph->addEdge(6, 8, 6);
-	// graph->addEdge(7, 8, 7);
 
 	fstream fin;
 	fin.open("../matlab/gr_100000_5.csv", ios::in);

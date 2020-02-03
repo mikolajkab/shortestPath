@@ -2,6 +2,8 @@
 #include<bits/stdc++.h> 
 #include <chrono>
 #include <fstream>
+#include <stdlib.h>     /* srand, rand */
+#include <time.h>       /* time */
 
 using namespace std; 
 using namespace std::chrono;
@@ -16,7 +18,8 @@ class Graph
 public: 
 	Graph(); 
 
-	void addEdge(int u, int v, int w, int h); 
+	void addEdge(int u, int v, int w); 
+	void addHeuristic(int u, int h); 
 
 	vector<list<iPair> > nodes;
 	vector<int> heuristic;
@@ -26,7 +29,7 @@ Graph::Graph()
 { 
 } 
 
-void Graph::addEdge(int u, int v, int w, int h)
+void Graph::addEdge(int u, int v, int w)
 { 
 	if (u >= nodes.size())
 	{
@@ -39,20 +42,23 @@ void Graph::addEdge(int u, int v, int w, int h)
 
 	nodes[u].push_back(make_pair(v, w)); 
 	nodes[v].push_back(make_pair(u, w));
+}
 
+void Graph::addHeuristic(int u, int h)
+{
 	if (u >= heuristic.size())
 	{
 		heuristic.resize(u+1);
 	}
 	heuristic[u] = h;
-} 
+}
 
 // Prints shortest paths from src to goal 
 void shortestPath(shared_ptr<Graph> graph, int src, int goal) 
 {
 	vector<int> dist(graph->nodes.size(), INT_MAX); 
 	vector<int> came_from(graph->nodes.size(), INT_MAX);
-	vector<int> heuristic(graph->nodes.size(), 0);
+	vector<int> heuristic = graph->heuristic;
 
 	// Create a priority queue to store vertices that 
     // are being preprocessed.
@@ -96,6 +102,7 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 				dist[v] = dist[u] + weight; 
 				pq.push(make_pair(dist[v] + heuristic[v], v));
 				came_from[v] = u;
+				// cout << v << "," << heuristic[v] << "\n";
 			} 
 		} 
 	} 
@@ -140,39 +147,53 @@ shared_ptr<Graph> create_graph()
 {
 	shared_ptr<Graph> graph = make_shared<Graph>();
 
-	// graph->addEdge(0, 1, 4);
-	// graph->addEdge(0, 7, 8);
-	// graph->addEdge(1, 2, 8);
-	// graph->addEdge(1, 7, 11);
-	// graph->addEdge(2, 3, 7);
-	// graph->addEdge(2, 8, 2);
-	// graph->addEdge(2, 5, 4);
-	// graph->addEdge(3, 4, 9);
-	// graph->addEdge(3, 5, 14);
-	// graph->addEdge(4, 5, 10);
-	// graph->addEdge(5, 6, 2);
-	// graph->addEdge(6, 7, 1);
-	// graph->addEdge(6, 8, 6);
-	// graph->addEdge(7, 8, 7);
+	/* initialize random seed: */
+	srand (time(NULL));
 
-	fstream fin;
-	fin.open("../matlab/gr_100000_5.csv", ios::in);
+	fstream fin_gr, fin_h;
+	fin_gr.open("../matlab/gr_100000_5.csv", ios::in);
+	fin_h.open("../matlab/h_100000_5.csv", ios::in);
 
 	vector<int> row;
 	string line, word;
-	getline(fin,line);
 
-	while (!fin.eof())
+	// dont process the first line with column names
+	getline(fin_gr,line);
+	
+	// generate graph
+	while (!fin_gr.eof())
 	{
 		row.clear();
-		getline(fin, line);
+		getline(fin_gr, line);
 		stringstream s(line);
 
 		while (getline(s, word, ','))  
 		{
 			row.push_back(stoi(word));
 		}
-		graph->addEdge(row[0]-1, row[1]-1, row[2], 0);
+
+		graph->addEdge(row[0]-1, row[1]-1, row[2]);
+	}
+
+	int u = 0;
+	// don`t process the first line with column names
+	getline(fin_h,line);
+	
+	// add heuristic to graph
+	while (!fin_h.eof())
+	{
+		row.clear();
+		getline(fin_h, line);
+		stringstream s(line);
+
+		while (getline(s, word, ','))  
+		{
+			row.push_back(stoi(word));
+		}
+
+		graph->addHeuristic(row[0], row[2]);
+
+		u++;
 	}
 
 	return graph;
