@@ -8,7 +8,7 @@ using namespace std;
 using namespace std::chrono;
 
 #define CHUNK 5
-const string fin_str = "../../matlab/gr_1000_1000.csv";
+const string fin_str = "../../matlab/gr_10000_1000_3.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -53,8 +53,8 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	came_from[src] = src;
 	pq.push(make_pair(0, src));
 
-	int i, tid, chunk;
-	chunk = CHUNK;
+	// int i, tid, chunk;
+	// chunk = CHUNK;
 
 	/* Looping till priority queue becomes empty */
 	auto start = high_resolution_clock::now();
@@ -63,9 +63,6 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		// counter++;
 		// printf("\n\nwhile loop: %d\n", counter);
 
-		// The vertex in the first pair is the minimum distance 
-		// vertex, extract it from priority queue. 
-		// vertex label is stored in second of pair
 		int u = pq.top().second; 
 		pq.pop(); 
 
@@ -75,11 +72,10 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		}
 
 		// omp_set_num_threads(4);
-		#pragma omp parallel shared(u, dist, came_from, pq) private (i, tid)
+		#pragma omp parallel shared(u, dist, came_from, pq) //private (i, tid)
 		{
 			#pragma omp for ordered schedule(static)
-			// for (i = graph->nodes[u].begin(); i != graph->nodes[u].end(); i++) 
-			for (i = 0; i < graph->nodes[u].size(); ++i)
+			for (int i = 0; i < graph->nodes[u].size(); ++i)
 			{
 				// tid = omp_get_thread_num();
 				// printf("thread id: %d, i: %d\n", tid, i);
@@ -87,10 +83,8 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 				int v = graph->nodes[u][i].first;
 				int weight = graph->nodes[u][i].second; 
 
-				// If there is a shorter path to v through u. 
 				if (dist[v] > dist[u] + weight) 
 				{ 
-					// Updating distance of v 
 					dist[v] = dist[u] + weight; 
 					came_from[v] = u;
 					#pragma omp ordered
@@ -161,7 +155,8 @@ shared_ptr<Graph> create_graph()
 		}
 		graph->addEdge(row[0]-1, row[1]-1, row[2]);
 	}
-
+	fin.close();
+	
 	return graph;
 }
 

@@ -5,8 +5,8 @@
 
 using namespace std; 
 
-const string fin_str = "../matlab/gr_10000_1000.csv";
-const string fout_str = "../matlab/h_10000_1000.csv";
+const string fin_str = "../matlab/gr_10000_1000_3.csv";
+const string fout_str = "../matlab/h_10000_1000_3.csv";
 
 // iPair ==> Integer Pair 
 typedef pair<int, int> iPair; 
@@ -18,7 +18,7 @@ public:
 
 	void addEdge(int u, int v, int w); 
 
-	vector<list<iPair> > nodes;
+	vector<vector<iPair> > nodes;
 }; 
 
 Graph::Graph() 
@@ -63,7 +63,8 @@ shared_ptr<Graph> create_graph()
 		}
 		graph->addEdge(row[0]-1, row[1]-1, row[2]);
 	}
-
+	fin.close();
+	
 	return graph;
 }
 
@@ -78,11 +79,10 @@ void generate_heuristic(shared_ptr<Graph> graph, int src)
 
 	vector<int> dist(graph->nodes.size(), INT_MAX);
 	vector<int> heuristic(graph->nodes.size(), INT_MAX);
-	
+	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
+
 	dist[src] = 0;
 	heuristic[src] = 0;
-	
-	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
 	pq.push(make_pair(0, src));
 
 	while(!pq.empty())
@@ -90,16 +90,17 @@ void generate_heuristic(shared_ptr<Graph> graph, int src)
 		int u = pq.top().second; 
 		pq.pop();
 
-		for(list<iPair>::iterator i = graph->nodes[u].begin(); i != graph->nodes[u].end(); ++i)
+		for (int i = 0; i < graph->nodes[u].size(); ++i)
 		{
-			int v = (*i).first;
-			int weight = (*i).second;
+			int v = graph->nodes[u][i].first;
+			int weight = graph->nodes[u][i].second;
 
 			if(dist[v] > dist[u] + weight)
 			{
 				dist[v] = dist[u] + weight;
 				pq.push(make_pair(dist[v], v));
-				heuristic[v] = rand() % weight + dist[u] + 1;
+				heuristic[v] = rand() % weight + heuristic[u] + 1;
+				// heuristic[v] = dist[v];
 			}
 		}
 	}
