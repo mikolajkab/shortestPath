@@ -27,5 +27,5 @@ end
 
 w = randi(100,[N*K,1]);
 h = graph(s,t,w);
-writetable(h.Edges, 'gr_.csv')
+writetable(h.Edges, 'gr_10000_10000.csv')
 end

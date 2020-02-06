@@ -6,13 +6,11 @@
 using namespace std; 
 using namespace std::chrono;
 
-const string fin_str = "../matlab/gr_200000_2.csv";
+const string fin_str = "../../matlab/gr_1000_1000.csv";
 
-// iPair ==> Integer Pair 
 typedef pair<int, int> iPair; 
 
-// This class represents a directed graph using 
-// adjacency list representation 
+// This class represents a directed graph
 class Graph 
 { 
 public: 
@@ -20,7 +18,7 @@ public:
 
 	void addEdge(int u, int v, int w); 
 
-	vector<list<iPair> > nodes; 
+	vector<vector<iPair> > nodes; 
 }; 
 
 Graph::Graph() 
@@ -47,47 +45,31 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 {
 	vector<int> dist(graph->nodes.size(), INT_MAX); 
 	vector<int> came_from(graph->nodes.size(), INT_MAX);
+	priority_queue< iPair, vector <iPair> , greater<iPair> > pq;
 
-	// Create a priority queue to store vertices that 
-    // are being preprocessed.
-	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
-
-	// Insert source itself in priority queue and initialize 
-	// its distance as 0.
-	pq.push(make_pair(0, src)); 
 	dist[src] = 0; 
+	came_from[src] = src;
+	pq.push(make_pair(0, src)); 
 
-	list<iPair>::iterator i;
-	
-	/* Looping till priority queue becomes empty (or all 
-	distances are not finalized) */
+	/* Looping till priority queue becomes empty */
 	auto start = high_resolution_clock::now();
 	while (!pq.empty()) 
-	{ 
-		// The vertex in the first pair is the minimum distance 
-		// vertex, extract it from priority queue. 
-		// vertex label is stored in second of pair
+	{
 		int u = pq.top().second; 
 		pq.pop(); 
-		came_from[src] = src;
 
 		if(u == goal)
 		{
 			break;
 		}
-
-		// 'i' is used to get all adjacent vertices of a vertex 
-		for (i = graph->nodes[u].begin(); i != graph->nodes[u].end(); ++i) 
+		
+		for (int i = 0; i < graph->nodes[u].size(); ++i)
 		{ 
-			// Get vertex label and weight of current adjacent 
-			// of u. 
-			int v = (*i).first; 
-			int weight = (*i).second; 
+			int v = graph->nodes[u][i].first; 
+			int weight = graph->nodes[u][i].second;
 
-			// If there is a shorter path to v through u. 
 			if (dist[v] > dist[u] + weight) 
 			{ 
-				// Updating distance of v 
 				dist[v] = dist[u] + weight; 
 				pq.push(make_pair(dist[v], v)); 
 				came_from[v] = u;
@@ -127,7 +109,7 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	} 
   	else cout << "Unable to open file";
 
-	auto duration = duration_cast<microseconds>(stop - start);
+	auto duration = duration_cast<milliseconds>(stop - start);
 	cout << "duration :" << duration.count() << endl;
 } 
 

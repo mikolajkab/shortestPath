@@ -2,7 +2,7 @@
  #include <stdio.h>
 
  #define N 100
- #define CHUNKSIZE 2
+ #define CHUNKSIZE 5
 
  int main(int argc, char *argv[]) {
 
@@ -14,7 +14,7 @@
    a[i] = b[i] = i * 1.0;
  chunk = CHUNKSIZE;
 
- omp_set_num_threads(5);
+//  omp_set_num_threads(5);
  #pragma omp parallel shared(a,b,c,chunk) private(i, tid)
    {
    tid = omp_get_thread_num();
@@ -23,8 +23,12 @@
    for (i=0; i < N; i++)
    {
      c[i] = a[i] + b[i];
-     printf("thread id = %d i = %d\n", tid, i);
+     printf("thread id = %d, %d\n", tid, i);
    }
    }   /* end of parallel region */
 
+    for (i=0; i<N; i++)
+    {
+      printf("c[%d]: %f\n", i, c[i]);
+    }
  }
