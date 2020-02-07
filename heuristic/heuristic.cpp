@@ -5,8 +5,8 @@
 
 using namespace std; 
 
-const string fin_str = "../matlab/gr_10000_1000_3.csv";
-const string fout_str = "../matlab/h_10000_1000_3.csv";
+const string fin_str = "../matlab/gr_5000_5000.csv";
+const string fout_str = "../matlab/h_5000_5000.csv";
 
 // iPair ==> Integer Pair 
 typedef pair<int, int> iPair; 

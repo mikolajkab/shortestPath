@@ -17,18 +17,18 @@
 //  omp_set_num_threads(5);
  #pragma omp parallel shared(a,b,c,chunk) private(i, tid)
    {
-   tid = omp_get_thread_num();
+    tid = omp_get_thread_num();
 
-   #pragma omp for schedule(static, chunk) nowait
-   for (i=0; i < N; i++)
-   {
-     c[i] = a[i] + b[i];
-     printf("thread id = %d, %d\n", tid, i);
-   }
+    // #pragma omp for schedule(static, chunk) nowait
+    for (i=0; i < N; i++)
+    {
+      c[i] = a[i] + b[i];
+      printf("thread id = %d, i = %d\n", tid, i);
+    }
    }   /* end of parallel region */
 
-    for (i=0; i<N; i++)
-    {
-      printf("c[%d]: %f\n", i, c[i]);
-    }
+  for (i=0; i<N; i++)
+  {
+    printf("c[%d]: %f\n", i, c[i]);
+  }
  }

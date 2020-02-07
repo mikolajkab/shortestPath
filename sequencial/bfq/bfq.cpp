@@ -7,12 +7,12 @@
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../matlab/gr_10000_1000.csv";
+const string fin_str = "../../matlab/gr_10000_5000.csv";
 
 typedef pair<int, int> iPair; 
 
 // This class represents a directed graph using 
-// adjacency list representation 
+// adjacency vector representation 
 class Graph 
 { 
 public:
@@ -20,7 +20,7 @@ public:
 
 	void addEdge(int u, int v, int w);
 	
-	vector<list<iPair> > nodes; 
+	vector<vector<iPair> > nodes; 
 }; 
 
 Graph::Graph() 
@@ -42,27 +42,21 @@ void Graph::addEdge(int u, int v, int w)
 	nodes[v].push_back(make_pair(u, w)); 
 } 
 
-// The main function that finds shortest distances from src to 
-// all other vertices using Bellman-Ford algorithm.
+// The main function that finds shortest distances
 void BellmanFord(shared_ptr<Graph> graph, int src, int goal) 
 { 
-	// Step 1: Initialize distances from src to all other vertices 
-	// as INFINITE 
 	vector<int> dist(graph->nodes.size(), INT_MAX);
 	vector<bool>in_queue(graph->nodes.size(), false);
 	vector<int> came_from(graph->nodes.size(), INT_MAX);
 
 	dist[src] = 0;
+	in_queue[src] = true;
+	came_from[src] = src;
 
 	queue<int> node_queue;
 	node_queue.push(src);
-	in_queue[src] = true;
 
-	list<iPair>::iterator i;
-
-	// Step 2: Relax all edges |V| - 1 times. A simple shortest 
-	// path from src to any other vertex can have at-most |V| - 1 
-	// edges
+	// main loop
 	auto start = high_resolution_clock::now(); 
 	while(!node_queue.empty())
 	{
@@ -70,10 +64,10 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 		node_queue.pop();
 		in_queue[u] = false;
 
-		for (i = graph->nodes[u].begin(); i != graph->nodes[u].end(); ++i)
+		for (int i = 0; i < graph->nodes[u].size(); ++i)
 		{
-			int v = (*i).first;
-			int weight = (*i).second;
+			int v = graph->nodes[u][i].first;
+			int weight = graph->nodes[u][i].second;
 
 			if (dist[v] > dist[u] + weight) 
 			{
@@ -148,6 +142,7 @@ shared_ptr<Graph> create_graph()
 		}
 		graph->addEdge(row[0]-1, row[1]-1, row[2]);
 	}
+	fin.close();
 
 	return graph;
 }

@@ -80,21 +80,35 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		}
 		#pragma omp parallel shared(u, dist, came_from, pq, heuristic) //private (i, tid)
 		{
-			#pragma omp for ordered schedule(static)
+			#pragma omp for schedule(static) nowait
 			for (int i = 0; i < graph->nodes[u].size(); ++i)
 			{ 
 				int v = graph->nodes[u][i].first; 
 				int weight = graph->nodes[u][i].second; 
 
+				// if (dist[v] > dist[u] + weight) 
+				// { 
+				// 	dist[v] = dist[u] + weight; 
+				// 	came_from[v] = u;
+				// 	#pragma omp critical
+				// 	{
+				// 		pq.push(make_pair(dist[v] + heuristic[v], v));
+				// 	}
+				// } 
+
 				if (dist[v] > dist[u] + weight) 
 				{ 
-					dist[v] = dist[u] + weight; 
-					came_from[v] = u;
-					#pragma omp ordered
+					#pragma omp critical
 					{
-						pq.push(make_pair(dist[v] + heuristic[v], v));
+						if (dist[v] > dist[u] + weight)
+						{
+							dist[v] = dist[u] + weight; 
+							came_from[v] = u;
+							pq.push(make_pair(dist[v], v)); 
+						} 
 					}
-				} 
+				}
+
 			}
 		}
 	} 

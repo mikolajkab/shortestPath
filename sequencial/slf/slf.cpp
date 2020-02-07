@@ -1,5 +1,4 @@
-// A C++ program for Bellman-Ford's queue-based single source 
-// shortest path algorithm. 
+// A C++ program for Bellman-Ford's queue-based algorithm. 
 #include <bits/stdc++.h> 
 #include <chrono>
 #include <fstream>
@@ -7,10 +6,11 @@
 using namespace std;
 using namespace std::chrono;
 
+const string fin_str = "../../matlab/gr_10000_5000.csv";
+
 typedef pair<int, int> iPair; 
 
-// This class represents a directed graph using 
-// adjacency list representation 
+// This class represents a directed graph
 class Graph 
 { 
 public:
@@ -18,7 +18,7 @@ public:
 
 	void addEdge(int u, int v, int w);
 	
-	vector<list<iPair> > nodes; 
+	vector<vector<iPair> > nodes; 
 }; 
 
 Graph::Graph() 
@@ -40,26 +40,21 @@ void Graph::addEdge(int u, int v, int w)
 	nodes[v].push_back(make_pair(u, w)); 
 } 
 
-// The main function that finds shortest distances from src to 
-// all other vertices using Bellman-Ford algorithm.
-void BellmanFord(shared_ptr<Graph> graph, int src) 
+// The main function that finds shortest distances
+void BellmanFord(shared_ptr<Graph> graph, int src, int goal) 
 {
-	// Step 1: Initialize distances from src to all other vertices 
-	// as INFINITE 
 	vector<int> dist(graph->nodes.size(), INT_MAX);
 	vector<bool>in_queue(graph->nodes.size(), false);
+	vector<int> came_from(graph->nodes.size(), INT_MAX);
 
 	dist[src] = 0;
+	in_queue[src] = true;
+	came_from[src] = src;
 
 	deque<int> node_queue;
 	node_queue.push_front(src);
-	in_queue[src] = true;
 
-	list<iPair>::iterator i;
-
-	// Step 2: Relax all edges |V| - 1 times. A simple shortest 
-	// path from src to any other vertex can have at-most |V| - 1 
-	// edges
+	// main loop
 	auto start = high_resolution_clock::now(); 
 	while(!node_queue.empty())
 	{
@@ -67,15 +62,16 @@ void BellmanFord(shared_ptr<Graph> graph, int src)
 		node_queue.pop_front();
 		in_queue[u] = false;
 		
-		for (i = graph->nodes[u].begin(); i != graph->nodes[u].end(); ++i)
+		for (int i = 0; i < graph->nodes[u].size(); ++i)
 		{
-			int v = (*i).first;
-			int weight = (*i).second;
+			int v = graph->nodes[u][i].first;
+			int weight = graph->nodes[u][i].second;
 
 			if (dist[v] > dist[u] + weight) 
 			{
 				dist[v] = dist[u] + weight;
-
+				came_from[v] = u;
+				
 				if (!in_queue[v])
 				{
 					if(node_queue.empty() || dist[v] <= dist[node_queue.front()])
@@ -103,6 +99,27 @@ void BellmanFord(shared_ptr<Graph> graph, int src)
   	}
   	else cout << "Unable to open file";
 
+	ofstream myfile_path ("slf_path.txt");
+	if (myfile_path.is_open())
+	{
+		vector<int> path;
+		int current = goal;
+		while(current != src)
+		{
+			path.push_back(current);
+			current = came_from[current];
+		}
+		path.push_back(src);
+		reverse(path.begin(), path.end());
+
+		for (vector<int>::iterator i = path.begin(); i < path.end(); ++i)
+		{
+			myfile_path << *i << "\t\t";
+		}
+    	myfile_path.close();
+	} 
+  	else cout << "Unable to open file";
+
 	auto duration = duration_cast<milliseconds>(stop - start);
 	cout << "duration :" << duration.count() << endl;
 
@@ -113,23 +130,8 @@ shared_ptr<Graph> create_graph()
 {
 	shared_ptr<Graph> graph = make_shared<Graph>();
 
-	// graph->addEdge(0, 1, 4);
-	// graph->addEdge(0, 7, 8);
-	// graph->addEdge(1, 2, 8);
-	// graph->addEdge(1, 7, 11);
-	// graph->addEdge(2, 3, 7);
-	// graph->addEdge(2, 8, 2);
-	// graph->addEdge(2, 5, 4);
-	// graph->addEdge(3, 4, 9);
-	// graph->addEdge(3, 5, 14);
-	// graph->addEdge(4, 5, 10);
-	// graph->addEdge(5, 6, 2);
-	// graph->addEdge(6, 7, 1);
-	// graph->addEdge(6, 8, 6);
-	// graph->addEdge(7, 8, 7);
-
 	fstream fin;
-	fin.open("../matlab/gr_100000_5.csv", ios::in);
+	fin.open(fin_str, ios::in);
 
 	vector<int> row;
 	string line, word;
@@ -147,6 +149,7 @@ shared_ptr<Graph> create_graph()
 		}
 		graph->addEdge(row[0]-1, row[1]-1, row[2]);
 	}
+	fin.close();
 
 	return graph;
 }
@@ -157,7 +160,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	BellmanFord(graph, 0);
+	BellmanFord(graph, 0, 10);
 
 	return 0;
 } 
