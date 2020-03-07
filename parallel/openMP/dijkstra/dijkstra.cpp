@@ -2,10 +2,12 @@
 #include<bits/stdc++.h> 
 #include <chrono>
 #include <fstream>
+#include <omp.h>
 
 using namespace std; 
 using namespace std::chrono;
 
+#define CHUNK 5
 const string fin_str = "../../matlab/gr_10000_100.csv";
 
 typedef pair<int, int> iPair; 
@@ -18,7 +20,7 @@ public:
 
 	void addEdge(int u, int v, int w); 
 
-	vector<vector<iPair> > nodes; 
+	vector<vector<iPair> > nodes;
 }; 
 
 Graph::Graph() 
@@ -45,16 +47,22 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 {
 	vector<int> dist(graph->nodes.size(), INT_MAX); 
 	vector<int> came_from(graph->nodes.size(), INT_MAX);
-	priority_queue< iPair, vector <iPair> , greater<iPair> > pq;
+	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
 
 	dist[src] = 0; 
 	came_from[src] = src;
-	pq.push(make_pair(0, src)); 
+	pq.push(make_pair(0, src));
+
+	// int i, tid, chunk;
+	// chunk = CHUNK;
 
 	/* Looping till priority queue becomes empty */
 	auto start = high_resolution_clock::now();
 	while (!pq.empty()) 
-	{
+	{ 
+		// counter++;
+		// printf("\n\nwhile loop: %d\n", counter);
+
 		int u = pq.top().second; 
 		pq.pop(); 
 
@@ -62,19 +70,30 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		{
 			break;
 		}
-		
-		for (int i = 0; i < graph->nodes[u].size(); ++i)
-		{ 
-			int v = graph->nodes[u][i].first; 
-			int weight = graph->nodes[u][i].second;
 
-			if (dist[v] > dist[u] + weight) 
-			{ 
-				dist[v] = dist[u] + weight; 
-				pq.push(make_pair(dist[v], v)); 
-				came_from[v] = u;
+		// omp_set_num_threads(4);
+		#pragma omp parallel shared(u, dist, came_from, pq, graph) //private (i, tid)
+		{
+			#pragma omp for schedule(static) nowait
+			for (int i = 0; i < graph->nodes[u].size(); ++i)
+			{
+				int v = graph->nodes[u][i].first;
+				int weight = graph->nodes[u][i].second;
+
+				if (dist[v] > dist[u] + weight) 
+				{ 
+					#pragma omp critical
+					{
+						if (dist[v] > dist[u] + weight)
+						{
+							dist[v] = dist[u] + weight; 
+							came_from[v] = u;
+							pq.push(make_pair(dist[v], v)); 
+						} 
+					}
+				}
 			} 
-		} 
+		}
 	} 
 	auto stop = high_resolution_clock::now(); 
 
@@ -137,7 +156,7 @@ shared_ptr<Graph> create_graph()
 		graph->addEdge(row[0]-1, row[1]-1, row[2]);
 	}
 	fin.close();
-
+	
 	return graph;
 }
 

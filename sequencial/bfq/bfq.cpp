@@ -7,12 +7,11 @@
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../../matlab/gr_10000_5000.csv";
+const string fin_str = "../../matlab/gr_10000_100.csv";
 
 typedef pair<int, int> iPair; 
 
-// This class represents a directed graph using 
-// adjacency vector representation 
+// This class represents a directed graph
 class Graph 
 { 
 public:

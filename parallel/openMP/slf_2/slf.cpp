@@ -2,6 +2,7 @@
 #include <bits/stdc++.h> 
 #include <chrono>
 #include <fstream>
+#include <omp.h>
 
 using namespace std;
 using namespace std::chrono;
@@ -54,35 +55,61 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 	deque<int> node_queue;
 	node_queue.push_front(src);
 
+	bool picked = false;
+	int u;
+	int v;
+	int weight;
+	int i;
+
 	// main loop
 	auto start = high_resolution_clock::now(); 
 	while(!node_queue.empty())
-	{
-		int u = node_queue.front();
-		node_queue.pop_front();
-		in_queue[u] = false;
-		
-		for (int i = 0; i < graph->nodes[u].size(); ++i)
+	{		
+		#pragma omp parallel private(picked, u, v, weight, i)
 		{
-			int v = graph->nodes[u][i].first;
-			int weight = graph->nodes[u][i].second;
-
-			if (dist[v] > dist[u] + weight) 
+			#pragma omp critical
 			{
-				dist[v] = dist[u] + weight;
-				came_from[v] = u;
-				
-				if (!in_queue[v])
+				if(!node_queue.empty())
 				{
-					if(node_queue.empty() || dist[v] <= dist[node_queue.front()])
-                    {
-                        node_queue.push_front(v);
-                    }
-                    else
-                    {
-                        node_queue.push_back(v);
-                    }
-					in_queue[v] = true;
+					u = node_queue.front();
+					node_queue.pop_front();
+					picked = true;
+				}
+			}
+		
+			if(picked)
+			{
+				in_queue[u] = false;
+
+				for (int i = 0; i < graph->nodes[u].size(); ++i)
+				{
+					int v = graph->nodes[u][i].first;
+					int weight = graph->nodes[u][i].second;
+
+					if (dist[v] > dist[u] + weight) 
+					{
+						#pragma omp critical
+						{
+							if (dist[v] > dist[u] + weight) 
+							{
+								dist[v] = dist[u] + weight;
+								came_from[v] = u;
+								
+								if (!in_queue[v])
+								{
+									if(node_queue.empty() || dist[v] <= dist[node_queue.front()])
+									{
+										node_queue.push_front(v);
+									}
+									else
+									{
+										node_queue.push_back(v);
+									}
+									in_queue[v] = true;
+								}
+							}
+						}
+					}
 				}
 			}
 		}

@@ -1,12 +1,17 @@
-// A C++ program for Bellman-Ford's queue-based algorithm. 
-#include <bits/stdc++.h> 
+// A C++ program for Bellman-Ford's queue-based single source 
+// shortest path algorithm. 
+#include <bits/stdc++.h>
 #include <chrono>
 #include <fstream>
+#include <omp.h>
+
+// For the CUDA runtime routines (prefixed with "cuda_")
+#include <cuda_runtime.h>
 
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../../matlab/gr_10000_100.csv";
+const string fin_str = "../../../matlab/gr_10000_100.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -40,9 +45,64 @@ void Graph::addEdge(int u, int v, int w)
 	nodes[v].push_back(make_pair(u, w)); 
 } 
 
+__global__ void relax_initial(int * d_dist, int n)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+	d_dist[i] = INF;
+
+	if (i == 0) 
+	{
+		d_dist[i] = 0;
+	}
+	__syncthreads();
+}
+
+__global__ void bf(int u, int n, int const* d_mat, int * d_dist, bool * d_has_change)
+{
+    int v = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (v < n)
+	{
+		int weight = d_mat[u * n + v];
+		if (weight < INF)
+		{
+			if (d_dist[u] + weight < d_dist[v]) 
+			{
+				d_dist[v] = d_dist[u] + weight;
+			}
+		}
+	}
+}
+
+__global__ void bfqKernel(???)
+{
+    for (int i = 0; i < graph->nodes[u].size(); ++i)
+    {
+        int v = graph->nodes[u][i].first;
+        int weight = graph->nodes[u][i].second;
+
+        if (dist[v] > dist[u] + weight)
+        {
+    // critical region
+            if (dist[v] > dist[u] + weight)
+            {
+                dist[v] = dist[u] + weight;
+                came_from[v] = u;
+
+                if (!in_queue[v])
+                {
+                    in_queue[v] = true;
+                    node_queue.push(v);
+                }
+            }
+        }
+    }
+}
+
 // The main function that finds shortest distances
 void BellmanFord(shared_ptr<Graph> graph, int src, int goal) 
-{
+{ 
 	vector<int> dist(graph->nodes.size(), INT_MAX);
 	vector<bool>in_queue(graph->nodes.size(), false);
 	vector<int> came_from(graph->nodes.size(), INT_MAX);
@@ -51,46 +111,24 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 	in_queue[src] = true;
 	came_from[src] = src;
 
-	deque<int> node_queue;
-	node_queue.push_front(src);
+	queue<int> node_queue;
+	node_queue.push(src);
 
 	// main loop
 	auto start = high_resolution_clock::now(); 
 	while(!node_queue.empty())
 	{
 		int u = node_queue.front();
-		node_queue.pop_front();
+		node_queue.pop();
 		in_queue[u] = false;
-		
-		for (int i = 0; i < graph->nodes[u].size(); ++i)
-		{
-			int v = graph->nodes[u][i].first;
-			int weight = graph->nodes[u][i].second;
-
-			if (dist[v] > dist[u] + weight) 
-			{
-				dist[v] = dist[u] + weight;
-				came_from[v] = u;
-				
-				if (!in_queue[v])
-				{
-					if(node_queue.empty() || dist[v] <= dist[node_queue.front()])
-                    {
-                        node_queue.push_front(v);
-                    }
-                    else
-                    {
-                        node_queue.push_back(v);
-                    }
-					in_queue[v] = true;
-				}
-			}
-		}
-	}
-	auto stop = high_resolution_clock::now();
+        // invoke kernel
+        // bfqKernel<<<??,??>>>(???);
+    }
+    
+	auto stop = high_resolution_clock::now(); 
 
 	// Print shortest distances stored in dist[] 
-	ofstream myfile ("slf.txt");
+	ofstream myfile ("bfq.txt");
   	if (myfile.is_open())
   	{
 		for (int i = 0; i < graph->nodes.size(); ++i) 
@@ -99,7 +137,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
   	}
   	else cout << "Unable to open file";
 
-	ofstream myfile_path ("slf_path.txt");
+	ofstream myfile_path ("bfq_path.txt");
 	if (myfile_path.is_open())
 	{
 		vector<int> path;
@@ -122,8 +160,6 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 
 	auto duration = duration_cast<milliseconds>(stop - start);
 	cout << "duration :" << duration.count() << endl;
-
-	return;
 } 
 
 shared_ptr<Graph> create_graph()
@@ -162,5 +198,5 @@ int main()
 
 	BellmanFord(graph, 0, 10);
 
-	return 0;
+	return 0; 
 } 

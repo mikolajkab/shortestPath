@@ -1,9 +1,11 @@
-// Program to find shortest path using Dijkstra algorithm
-#include<bits/stdc++.h> 
+// A C++ program for Bellman-Ford's queue-based single source 
+// shortest path algorithm. 
+#include <bits/stdc++.h>
 #include <chrono>
 #include <fstream>
+#include <omp.h>
 
-using namespace std; 
+using namespace std;
 using namespace std::chrono;
 
 const string fin_str = "../../matlab/gr_10000_100.csv";
@@ -13,11 +15,11 @@ typedef pair<int, int> iPair;
 // This class represents a directed graph
 class Graph 
 { 
-public: 
-	Graph(); 
+public:
+	Graph();
 
-	void addEdge(int u, int v, int w); 
-
+	void addEdge(int u, int v, int w);
+	
 	vector<vector<iPair> > nodes; 
 }; 
 
@@ -37,49 +39,63 @@ void Graph::addEdge(int u, int v, int w)
 	}
 
 	nodes[u].push_back(make_pair(v, w)); 
-	nodes[v].push_back(make_pair(u, w));
+	nodes[v].push_back(make_pair(u, w)); 
 } 
 
-// Prints shortest paths from src to all other vertices 
-void shortestPath(shared_ptr<Graph> graph, int src, int goal) 
-{
-	vector<int> dist(graph->nodes.size(), INT_MAX); 
+// The main function that finds shortest distances
+void BellmanFord(shared_ptr<Graph> graph, int src, int goal) 
+{ 
+	vector<int> dist(graph->nodes.size(), INT_MAX);
+	vector<bool>in_queue(graph->nodes.size(), false);
 	vector<int> came_from(graph->nodes.size(), INT_MAX);
-	priority_queue< iPair, vector <iPair> , greater<iPair> > pq;
 
-	dist[src] = 0; 
+	dist[src] = 0;
+	in_queue[src] = true;
 	came_from[src] = src;
-	pq.push(make_pair(0, src)); 
 
-	/* Looping till priority queue becomes empty */
-	auto start = high_resolution_clock::now();
-	while (!pq.empty()) 
+	queue<int> node_queue;
+	node_queue.push(src);
+
+	// main loop
+	auto start = high_resolution_clock::now(); 
+	while(!node_queue.empty())
 	{
-		int u = pq.top().second; 
-		pq.pop(); 
+		int u = node_queue.front();
+		node_queue.pop();
+		in_queue[u] = false;
 
-		if(u == goal)
+		#pragma omp parallel shared(u, dist, came_from, node_queue, in_queue, graph)
 		{
-			break;
-		}
-		
-		for (int i = 0; i < graph->nodes[u].size(); ++i)
-		{ 
-			int v = graph->nodes[u][i].first; 
-			int weight = graph->nodes[u][i].second;
+			#pragma omp for schedule(static) nowait
+			for (int i = 0; i < graph->nodes[u].size(); ++i)
+			{
+				int v = graph->nodes[u][i].first;
+				int weight = graph->nodes[u][i].second;
 
-			if (dist[v] > dist[u] + weight) 
-			{ 
-				dist[v] = dist[u] + weight; 
-				pq.push(make_pair(dist[v], v)); 
-				came_from[v] = u;
-			} 
-		} 
-	} 
+				if (dist[v] > dist[u] + weight)
+				{
+					#pragma omp critical
+					{
+						if (dist[v] > dist[u] + weight)
+						{
+							dist[v] = dist[u] + weight;
+							came_from[v] = u;
+
+							if (!in_queue[v])
+							{
+								in_queue[v] = true;
+								node_queue.push(v);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 	auto stop = high_resolution_clock::now(); 
 
-	// Print shortest distances stored in dist[]
-	ofstream myfile ("dijkstra.txt");
+	// Print shortest distances stored in dist[] 
+	ofstream myfile ("bfq.txt");
   	if (myfile.is_open())
   	{
 		for (int i = 0; i < graph->nodes.size(); ++i) 
@@ -88,7 +104,7 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
   	}
   	else cout << "Unable to open file";
 
-	ofstream myfile_path ("dijkstra_path.txt");
+	ofstream myfile_path ("bfq_path.txt");
 	if (myfile_path.is_open())
 	{
 		vector<int> path;
@@ -141,13 +157,13 @@ shared_ptr<Graph> create_graph()
 	return graph;
 }
 
-// Driver program to test methods of graph class 
-int main() 
+// Driver program to test above functions 
+int main()
 { 
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	shortestPath(graph, 0, 10);
+	BellmanFord(graph, 0, 10);
 
 	return 0; 
 } 
