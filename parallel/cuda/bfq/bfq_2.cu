@@ -127,7 +127,7 @@ __global__ void bf(int n, int const* d_mat, int * d_dist, bool * d_has_change)
 
 	bool my_has_change = false;
 
-	if (v < n) 
+	if (v < n)
 	{
 		for (int u = 0; u < n; ++u) 
 		{
