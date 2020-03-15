@@ -146,7 +146,7 @@ __global__ void bf(int n, int const* d_mat, int * d_dist, bool * d_has_change)
 		*d_has_change = true;
 }
 
-void bellman_ford(int n, int *h_dist, int *h_mat) 
+void bellman_ford(int n, int *h_dist, int *h_mat)
 {
 	dim3 threadsPerBlock(256);
 	dim3 blocksPerGrid((n + threadsPerBlock.x - 1) / threadsPerBlock.x);
@@ -192,9 +192,6 @@ void bellman_ford(int n, int *h_dist, int *h_mat)
 int main(int argc, char **argv) 
 {
 	int N = 100;
-	int *dist = (int *)calloc(sizeof(int), N);
-	// TODO
-	int *mat = (int *)calloc(sizeof(int), N*N);
 
 	bellman_ford(N, dist, mat);
 	CHECK(cudaDeviceSynchronize());

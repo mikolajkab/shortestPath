@@ -13,57 +13,28 @@ using namespace std::chrono;
 
 const string fin_str = "../../../matlab/gr_10000_100.csv";
 
-typedef pair<int, int> iPair; 
+typedef pair<int, int> iPair;
 
-// This class represents a directed graph
-class Graph 
-{ 
-public:
-	Graph();
-
-	void addEdge(int u, int v, int w);
-	
-	vector<vector<iPair> > nodes; 
-}; 
-
-Graph::Graph() 
-{ 
-} 
-
-void Graph::addEdge(int u, int v, int w)
-{ 
-	if (u >= nodes.size())
-	{
-		nodes.resize(u+1);
-	}
-	if (v >= nodes.size())
-	{
-		nodes.resize(v+1);
-	}
-
-	nodes[u].push_back(make_pair(v, w)); 
-	nodes[v].push_back(make_pair(u, w)); 
-} 
-
-__global__ void relax_initial(int * d_dist, int n)
+__global__ void relax_initial(int * d_dist, int* h_came_from, bool* h_in_queue, int n)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 
-	d_dist[i] = INF;
+	d_dist[i] = INT_MAX;
 
 	if (i == 0) 
 	{
 		d_dist[i] = 0;
+
 	}
 	__syncthreads();
 }
 
-__global__ void bf(int u, int const* d_weights, int* d_dist, int* in_queue, int* came_from)
+__global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* in_queue, int* came_from)
 {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int v = blockIdx.x * blockDim.x + threadIdx.x;
 
-	int weight = d_weights[i];
-	if (weight < INF)
+	int weight = d_weights[u * n + v];
+	if (weight < INT_MAX)
 	{
 		if (d_dist[u] + weight < d_dist[v])
 		{
@@ -77,21 +48,24 @@ __global__ void bf(int u, int const* d_weights, int* d_dist, int* in_queue, int*
 // The main function that finds shortest distances
 void BellmanFord(int src, int goal, int n, int h_weights[]) 
 { 
-	int threadsPerBlock = 256;
-	int blocksPerGrid = ((n + threadsPerBlock.x - 1) / threadsPerBlock.x);
+	dim3 threadsPerBlock = 256;
+	dim3 blocksPerGrid = ((n + threadsPerBlock.x - 1) / threadsPerBlock.x);
 	
 	// host 
 	int *h_dist = (int *)calloc(sizeof(int), n);
-	int *h_in_queue = (int *)calloc(sizeof(bool), n);
 	int *h_came_from = (int *)calloc(sizeof(int), n);
+	bool *h_in_queue = (bool *)calloc(sizeof(bool), n);
 
-	int h_dist[] = {[0 ... n-1] = INT_MAX};
-	int h_in_queue[] = {[0 ... n-1] = false};
-	int h_came_from[] = {[0 ... n-1] = INT_MAX};
+	for (int i=0; i<n; i++)
+	{
+		h_dist[i] = INT_MAX;
+		h_came_from[i] = INT_MAX;
+		h_in_queue[i] = false;
+	}
 
 	h_dist[src] = 0;
-	h_in_queue[src] = true;
 	h_came_from[src] = src;
+	h_in_queue[src] = true;
 
 	// device
 	int* d_weights;
@@ -120,25 +94,38 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 		node_queue.pop();
 		h_in_queue[u] = false;
 
-		cudaMemcpy(d_in_queue, h_in_queue, n * sizeof(int), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_in_queue, h_in_queue, n * sizeof(bool), cudaMemcpyHostToDevice);
 
         // invoke kernel
-		bf <<<blocksPerGrid, threadsPerBlock>>>(u, d_weights, d_dist, d_in_queue, d_came_from);
+		bf <<<blocksPerGrid, threadsPerBlock>>>(n, u, d_weights, d_dist, d_in_queue, d_came_from);
 	
-		cudaMemcpy(h_in_queue, d_in_queue, n * sizeof(int), cudaMemcpyDeviceToHost);
+		cudaMemcpy(h_in_queue, d_in_queue, n * sizeof(bool), cudaMemcpyDeviceToHost);
+
+		for (int i=0; i<n; i++)
+		{
+			if (h_in_queue)
+			{
+				node_queue.push(i);
+			}
+		}
 	}
+
 	auto stop = high_resolution_clock::now(); 
 
 	cudaMemcpy(h_dist, d_dist, sizeof(int) * n, cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_came_from, d_came_from, n * sizeof(int), cudaMemcpyDeviceToHost);
 
-
+	cudaFree(d_weights);
+	cudaFree(d_dist);
+	cudaFree(d_came_from);
+	cudaFree(d_in_queue);
 
 	// Print shortest distances stored in dist[] 
 	ofstream myfile ("bfq.txt");
   	if (myfile.is_open())
   	{
-		for (int i = 0; i < graph->nodes.size(); ++i) 
-			myfile << i << "\t\t" << dist[i] <<"\n"; 
+		for (int i = 0; i < n; ++i) 
+			myfile << i << "\t\t" << h_dist[i] <<"\n"; 
     	myfile.close();
   	}
   	else cout << "Unable to open file";
@@ -151,7 +138,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 		while(current != src)
 		{
 			path.push_back(current);
-			current = came_from[current];
+			current = h_came_from[current];
 		}
 		path.push_back(src);
 		reverse(path.begin(), path.end());
@@ -169,13 +156,17 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 } 
 
 //translate 2-dimension coordinate to 1-dimension
-int convert_dimension_2D_1D(int x, int y, int n) {
+int convert_dimension_2D_1D(int x, int y, int n) 
+{
 	return x * n + y;
 }
 
-int* create_weights(int weights[], N)
+void create_weights(int weights[], int n)
 {
-	int adj_mat[N][N];
+	for (int i = 0; i < n * n; i++) 
+	{
+		weights[i] = INT_MAX;
+	}
 
 	fstream fin;
 	fin.open(fin_str, ios::in);
@@ -194,22 +185,11 @@ int* create_weights(int weights[], N)
 		{
 			row.push_back(stoi(word));
 		}
-		adj_mat[row[0]-1, row[1]-1] = row[2];
+
+		weights[convert_dimension_2D_1D(row[0]-1, row[1]-1, n)] = row[2];
 	}
 	fin.close();
-
-	for (int i = 0; i < N; i++) 
-	{
-		for (int j = 0; j < N; j++) 
-		{
-			inputf >> weights[convert_dimension_2D_1D(i, j, N)];
-		}
-	}
-
-	return weights;
 }
-
-
 
 // Driver program to test above functions 
 int main()
@@ -217,9 +197,9 @@ int main()
 	int N = 10;
 	int* mat = (int *)malloc(N * N * sizeof(int));
 
-	int* weights = create_weights(mat, N);
+	create_weights(mat, N);
 
-	BellmanFord(0, 10);
+	BellmanFord(0, 10, N, mat);
 
 	return 0; 
 } 
