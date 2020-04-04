@@ -29,17 +29,17 @@ __global__ void relax_initial(int * d_dist, int* h_came_from, bool* h_in_queue, 
 	__syncthreads();
 }
 
-__global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* in_queue, int* came_from)
+__global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* d_in_queue, int* came_from)
 {
     int v = blockIdx.x * blockDim.x + threadIdx.x;
 
 	int weight = d_weights[u * n + v];
 	if (weight < INT_MAX)
 	{
-		if (d_dist[u] + weight < d_dist[v])
+		if (d_dist[v] > d_dist[u] + weight)
 		{
 			d_dist[v] = d_dist[u] + weight;
-			in_queue[v] = true;
+			d_in_queue[v] = true;
 			came_from[v] = u;
 		}
 	}
@@ -75,8 +75,8 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 
 	cudaMalloc(&d_weights, n * n * sizeof(int));
 	cudaMalloc(&d_dist, n * sizeof(int));
-	cudaMalloc(&d_came_from, sizeof(int));
-	cudaMalloc(&d_in_queue, sizeof(bool));
+	cudaMalloc(&d_came_from, n * sizeof(int));
+	cudaMalloc(&d_in_queue, n * sizeof(bool));
 
 	// copy host to device
 	cudaMemcpy(d_weights, h_weights, n * n * sizeof(int), cudaMemcpyHostToDevice);
