@@ -8,7 +8,7 @@
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../../../matlab/gr_1000_499.csv";
+const string fin_str = "../../../matlab/gr_10000_100.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -38,8 +38,8 @@ void Graph::addEdge(int u, int v, int w)
 		nodes.resize(v+1);
 	}
 
-	nodes[u].push_back(make_pair(v, w)); 
 	nodes[v].push_back(make_pair(u, w)); 
+	nodes[u].push_back(make_pair(v, w)); 
 } 
 
 // The main function that finds shortest distances
