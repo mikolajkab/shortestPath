@@ -113,7 +113,7 @@ __global__ void relax_initial(int * d_dist, int n)
 		d_dist[i] = 0;
 	}
 	__syncthreads();
-}
+}	
 
 __global__ void bf(int n, int const* d_mat, int * d_dist, bool * d_has_change)
 {

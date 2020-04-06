@@ -11,7 +11,7 @@
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../../../matlab/gr_10000_100.csv";
+const string fin_str = "../matlab/gr_1000_499.csv";
 
 typedef pair<int, int> iPair;
 
@@ -103,7 +103,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 
 		for (int i=0; i<n; i++)
 		{
-			if (h_in_queue)
+			if (h_in_queue[i])
 			{
 				node_queue.push(i);
 			}
