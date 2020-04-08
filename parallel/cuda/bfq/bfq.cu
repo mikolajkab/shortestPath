@@ -11,7 +11,7 @@
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../matlab/gr_10000_100.csv";
+const string fin_str = "../matlab/gr_20_5.csv";
 
 typedef pair<int, int> iPair;
 
@@ -59,6 +59,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	int *h_dist = (int *)calloc(sizeof(int), n);
 	int *h_came_from = (int *)calloc(sizeof(int), n);
 	bool *h_has_change = (bool *)calloc(sizeof(bool), n);
+	bool *h_has_change_empty = (bool *)calloc(sizeof(bool), n);
 	
 	vector<bool>in_queue(n, false);
 
@@ -66,6 +67,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	{
 		h_dist[i] = INT_MAX;
 		h_came_from[i] = INT_MAX;
+		h_has_change_empty[i] = false;
 	}
 
 	h_dist[src] = 0;
@@ -101,19 +103,21 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 		in_queue[u] = false;
 
 		counter++;
-		cout << "counter: " << counter << "\n";
 		// cudaMemcpy(d_has_change, h_has_change, n * sizeof(bool), cudaMemcpyHostToDevice);
 
         // invoke kernel
 		bf <<<blocksPerGrid, threadsPerBlock>>>(n, u, d_weights, d_dist, d_has_change, d_came_from);
 	
-		cout << "counter: " << counter << "\n";
-
 		cudaMemcpy(h_has_change, d_has_change, n * sizeof(bool), cudaMemcpyDeviceToHost);
 
-		cout << "counter: " << counter << "\n";
+		cout << "counter: " << counter << memcmp(h_has_change, h_has_change_empty, sizeof(h_has_change)) << "\n";
 
-		for (int i=n; i<n; i++)
+		// if (0 == memcmp(h_has_change, h_has_change_empty, sizeof(h_has_change)))
+		// {
+		// 	break;
+		// }
+
+		for (int i = 0; i < n; i++)
 		{
 			if (h_has_change[i])
 			{
@@ -203,8 +207,8 @@ void create_weights(int weights[], int n)
 			row.push_back(stoi(word));
 		}
 
-		weights[convert_dimension_2D_1D(row[1]-1, row[0]-1, n)] = row[2];
 		weights[convert_dimension_2D_1D(row[0]-1, row[1]-1, n)] = row[2];
+		weights[convert_dimension_2D_1D(row[1]-1, row[0]-1, n)] = row[2];
 	}
 	fin.close();
 }
@@ -216,6 +220,11 @@ int main()
 	int* mat = (int *)malloc(N * N * sizeof(int));
 
 	create_weights(mat, N);
+
+	// for (int i=0; i< N*N; i++)
+	// {
+	// 	cout << mat[i] << " ";
+	// }
 
 	BellmanFord(0, 10, N, mat);
 
