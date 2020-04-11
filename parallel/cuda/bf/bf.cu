@@ -1,4 +1,4 @@
-// A C++ program for Bellman-Ford's queue-based single source 
+// A C++ program for Bellman-Ford's single source 
 // shortest path algorithm. 
 #include <bits/stdc++.h>
 #include <chrono>
@@ -11,7 +11,7 @@
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../matlab/gr_10000_1000.csv";
+const string fin_str = "../matlab/gr_1000_499.csv";
 
 typedef pair<int, int> iPair;
 
@@ -24,26 +24,29 @@ __global__ void relax_initial(int * d_dist, int* h_came_from, bool* h_has_change
 	if (i == 0) 
 	{
 		d_dist[i] = 0;
-
 	}
 	__syncthreads();
 }
 
-__global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
+__global__ void bf(int n, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
 {
 	int v = blockIdx.x * blockDim.x + threadIdx.x;
+
 	if(v < n)
 	{
-		d_has_change[v] = false;
+		*d_has_change = false;
 
-		int weight = d_weights[u * n + v];
-		if (weight < INT_MAX)
+		for (int u = 0; u < n; u++)
 		{
-			if (d_dist[v] > d_dist[u] + weight)
+			int weight = d_weights[u * n + v];
+			if (weight < INT_MAX)
 			{
-				d_dist[v] = d_dist[u] + weight;
-				d_has_change[v] = true;
-				came_from[v] = u;
+				if (d_dist[v] > d_dist[u] + weight)
+				{
+					d_dist[v] = d_dist[u] + weight;
+					*d_has_change = true;
+					came_from[v] = u;
+				}
 			}
 		}
 	}
@@ -58,10 +61,8 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	// host 
 	int *h_dist = (int *)calloc(sizeof(int), n);
 	int *h_came_from = (int *)calloc(sizeof(int), n);
-	bool *h_has_change = (bool *)calloc(sizeof(bool), n);
+	bool h_has_change;
 	
-	vector<bool>in_queue(n, false);
-
 	for (int i=0; i<n; i++)
 	{
 		h_dist[i] = INT_MAX;
@@ -70,7 +71,6 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 
 	h_dist[src] = 0;
 	h_came_from[src] = src;
-	in_queue[src] = true;
 
 	// device
 	int* d_weights;
@@ -81,43 +81,28 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	cudaMalloc(&d_weights, n * n * sizeof(int));
 	cudaMalloc(&d_dist, n * sizeof(int));
 	cudaMalloc(&d_came_from, n * sizeof(int));
-	cudaMalloc(&d_has_change, n * sizeof(bool));
+	cudaMalloc(&d_has_change, sizeof(bool));
 
 	// copy host to device
 	cudaMemcpy(d_weights, h_weights, n * n * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_dist, h_dist, n * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_came_from, h_came_from, n * sizeof(int), cudaMemcpyHostToDevice);
 
-	queue<int> node_queue;
-	node_queue.push(src);
-
 	int counter = 0;
 	// main loop
 	auto start = high_resolution_clock::now();
-	while(!node_queue.empty())
+	while(true)
 	{
-		int u = node_queue.front();
-		node_queue.pop();
-		in_queue[u] = false;
-
 		counter++;
 
         // invoke kernel
-		bf <<<blocksPerGrid, threadsPerBlock>>>(n, u, d_weights, d_dist, d_has_change, d_came_from);
+		bf <<<blocksPerGrid, threadsPerBlock>>>(n, d_weights, d_dist, d_has_change, d_came_from);
 	
-		cudaMemcpy(h_has_change, d_has_change, n * sizeof(bool), cudaMemcpyDeviceToHost);
+		cudaMemcpy(&h_has_change, d_has_change, sizeof(bool), cudaMemcpyDeviceToHost);
 
-		for (int i = 0; i < n; i++)
+		if(!h_has_change)
 		{
-			if (h_has_change[i])
-			{
-				if(!in_queue[i])
-				{
-					cout << "i: " << i << "\n";
-					in_queue[i] = true;
-					node_queue.push(i);
-				}
-			}
+			break;
 		}
 	}
 
@@ -208,7 +193,7 @@ void create_weights(int weights[], int n)
 // Driver program to test above functions 
 int main()
 {
-	int N = 10000;
+	int N = 1000;
 	int* mat = (int *)malloc(N * N * sizeof(int));
 
 	create_weights(mat, N);
