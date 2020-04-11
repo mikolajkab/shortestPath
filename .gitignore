@@ -1,6 +1,8 @@
 # ignore everything
 *
+
 # but
+!.gitiignore 
 
 !heuristic/heuristic.cpp
 !heuristic/makefile
