@@ -11,7 +11,7 @@
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../matlab/gr_20_5.csv";
+const string fin_str = "../matlab/gr_10000_1000.csv";
 
 typedef pair<int, int> iPair;
 
