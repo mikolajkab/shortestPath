@@ -2,12 +2,12 @@
 *
 
 # but
-!.gitiignore 
+!.gitiignore
 
 !heuristic/heuristic.cpp
 !heuristic/makefile
 
-!optimalControl/*
+!optimalControl/
 
 !parallel/cuda/bfq/bfq.cpp
 !parallel/cuda/bfq/bfq.cu
