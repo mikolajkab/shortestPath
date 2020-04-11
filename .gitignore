@@ -2,53 +2,53 @@
 *
 
 # but
-!.gitiignore
+!/.gitiignore
 
-!heuristic/heuristic.cpp
-!heuristic/makefile
+!/heuristic/heuristic.cpp
+!/heuristic/makefile
 
-!optimalControl/
+!/optimalControl/
 
-!parallel/cuda/bfq/bfq.cpp
-!parallel/cuda/bfq/bfq.cu
-!parallel/cuda/bfq/bfq_2.cu
-!parallel/cuda/bfq/makefile
+!/parallel/cuda/bfq/bfq.cpp
+!/parallel/cuda/bfq/bfq.cu
+!/parallel/cuda/bfq/bfq_2.cu
+!/parallel/cuda/bfq/makefile
 
-!parallel/openMP/astar/astar.cpp
-!parallel/openMP/astar/makefile
+!/parallel/openMP/astar/astar.cpp
+!/parallel/openMP/astar/makefile
 
-!parallel/openMP/bfq/bfq.cpp
-!parallel/openMP/bfq/makefile
+!/parallel/openMP/bfq/bfq.cpp
+!/parallel/openMP/bfq/makefile
 
-!parallel/openMP/bfq_2/bfq.cpp
-!parallel/openMP/bfq_2/makefile
+!/parallel/openMP/bfq_2/bfq.cpp
+!/parallel/openMP/bfq_2/makefile
 
-!parallel/openMP/bfq_3/bfq.cpp
-!parallel/openMP/bfq_3/makefile
+!/parallel/openMP/bfq_3/bfq.cpp
+!/parallel/openMP/bfq_3/makefile
 
-!parallel/openMP/dijkstra/dijkstra.cpp
-!parallel/openMP/dijkstra/makefile
+!/parallel/openMP/dijkstra/dijkstra.cpp
+!/parallel/openMP/dijkstra/makefile
 
-!parallel/openMP/slf/slf.cpp
-!parallel/openMP/slf/makefile
+!/parallel/openMP/slf/slf.cpp
+!/parallel/openMP/slf/makefile
 
-!parallel/openMP/slf_2/slf.cpp
-!parallel/openMP/slf_2/makefile
+!/parallel/openMP/slf_2/slf.cpp
+!/parallel/openMP/slf_2/makefile
 
-!sequencial/openMP/astar/astar.cpp
-!sequencial/openMP/astar/makefile
+!/sequencial/openMP/astar/astar.cpp
+!/sequencial/openMP/astar/makefile
 
-!sequencial/openMP/bf/bf.cpp
-!sequencial/openMP/bf/makefile
+!/sequencial/openMP/bf/bf.cpp
+!/sequencial/openMP/bf/makefile
 
-!sequencial/openMP/bfq/bfq.cpp
-!sequencial/openMP/bfq/makefile
+!/sequencial/openMP/bfq/bfq.cpp
+!/sequencial/openMP/bfq/makefile
 
-!sequencial/openMP/dijkstra/dijkstra.cpp
-!sequencial/openMP/dijkstra/makefile
+!/sequencial/openMP/dijkstra/dijkstra.cpp
+!/sequencial/openMP/dijkstra/makefile
 
-!sequencial/openMP/slf/slf.cpp
-!sequencial/openMP/slf/makefile
+!/sequencial/openMP/slf/slf.cpp
+!/sequencial/openMP/slf/makefile
 
 
 
