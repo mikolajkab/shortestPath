@@ -7,7 +7,7 @@
 !/heuristic/heuristic.cpp
 !/heuristic/makefile
 
-!/optimalControl/
+!/optimalControl/*
 
 !/parallel/cuda/bfq/bfq.cpp
 !/parallel/cuda/bfq/bfq.cu
@@ -35,20 +35,20 @@
 !/parallel/openMP/slf_2/slf.cpp
 !/parallel/openMP/slf_2/makefile
 
-!/sequencial/openMP/astar/astar.cpp
-!/sequencial/openMP/astar/makefile
+!/sequencial/astar/astar.cpp
+!/sequencial/astar/makefile
 
-!/sequencial/openMP/bf/bf.cpp
-!/sequencial/openMP/bf/makefile
+!/sequencial/bf/bf.cpp
+!/sequencial/bf/makefile
 
-!/sequencial/openMP/bfq/bfq.cpp
-!/sequencial/openMP/bfq/makefile
+!/sequencial/bfq/bfq.cpp
+!/sequencial/bfq/makefile
 
-!/sequencial/openMP/dijkstra/dijkstra.cpp
-!/sequencial/openMP/dijkstra/makefile
+!/sequencial/dijkstra/dijkstra.cpp
+!/sequencial/dijkstra/makefile
 
-!/sequencial/openMP/slf/slf.cpp
-!/sequencial/openMP/slf/makefile
+!/sequencial/slf/slf.cpp
+!/sequencial/slf/makefile
 
 
 
