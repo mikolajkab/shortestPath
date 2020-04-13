@@ -9,9 +9,10 @@
 
 !/optimalControl/*
 
-!/parallel/cuda/bfq/bfq.cpp
+!/parallel/cuda/bf/bf.cu
+!/parallel/cuda/bf/makefile
+
 !/parallel/cuda/bfq/bfq.cu
-!/parallel/cuda/bfq/bfq_2.cu
 !/parallel/cuda/bfq/makefile
 
 !/parallel/openMP/astar/astar.cpp
