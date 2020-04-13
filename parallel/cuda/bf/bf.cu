@@ -11,35 +11,31 @@
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../matlab/gr_1000_499.csv";
+#define INF 2000000000
+
+const string fin_str = "../matlab/gr_10000_1000.csv";
 
 typedef pair<int, int> iPair;
-
-__global__ void relax_initial(int * d_dist, int* h_came_from, bool* h_has_change, int n)
-{
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-
-	d_dist[i] = INT_MAX;
-
-	if (i == 0) 
-	{
-		d_dist[i] = 0;
-	}
-	__syncthreads();
-}
 
 __global__ void bf(int n, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
 {
 	int v = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if(v < n)
-	{
+	if (v == 0)
 		*d_has_change = false;
+	__syncthreads();
 
-		for (int u = 0; u < n; u++)
+	if(v >= n)
+	{
+		return;
+	}
+
+	for (int u = 0; u < n; ++u)
+	{
+		if (u != v)
 		{
 			int weight = d_weights[u * n + v];
-			if (weight < INT_MAX)
+			if (weight < INF)
 			{
 				if (d_dist[v] > d_dist[u] + weight)
 				{
@@ -50,6 +46,39 @@ __global__ void bf(int n, int const* d_weights, int* d_dist, bool* d_has_change,
 			}
 		}
 	}
+	__syncthreads();
+}
+
+void bf_func(int n, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
+{
+	*d_has_change = false;
+
+	for (int v = 0; v < n; ++v)
+	{
+		for (int u = 0; u < n; ++u)
+		{
+			if (u != v)
+			{
+				int weight = d_weights[u * n + v];
+				if (weight < INF)
+				{
+					if (d_dist[v] > d_dist[u] + weight)
+					{
+						d_dist[v] = d_dist[u] + weight;
+						*d_has_change = true;
+						came_from[v] = u;
+						cout << "v: " << v << ", u: " << u << ", dist_v: " << d_dist[v] << ", dist_u: " << d_dist[u] << ", weight: " << weight << "\n";
+					}
+				}
+			}
+		}
+	}
+}
+
+//translate 2-dimension coordinate to 1-dimension
+int convert_dimension_2D_1D(int x, int y, int n) 
+{
+	return x * n + y;
 }
 
 // The main function that finds shortest distances
@@ -61,12 +90,12 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	// host 
 	int *h_dist = (int *)calloc(sizeof(int), n);
 	int *h_came_from = (int *)calloc(sizeof(int), n);
-	bool h_has_change;
+	bool *h_has_change = (bool *)calloc(sizeof(bool), 1);
 	
 	for (int i=0; i<n; i++)
 	{
-		h_dist[i] = INT_MAX;
-		h_came_from[i] = INT_MAX;
+		h_dist[i] = INF;
+		h_came_from[i] = INF;
 	}
 
 	h_dist[src] = 0;
@@ -88,6 +117,12 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	cudaMemcpy(d_dist, h_dist, n * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_came_from, h_came_from, n * sizeof(int), cudaMemcpyHostToDevice);
 
+	// for(int i=0; i<n; i++)
+	// {
+	// 	cout << h_dist[i] << " ";
+	// }
+	// cout << "\n";
+
 	int counter = 0;
 	// main loop
 	auto start = high_resolution_clock::now();
@@ -98,9 +133,11 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
         // invoke kernel
 		bf <<<blocksPerGrid, threadsPerBlock>>>(n, d_weights, d_dist, d_has_change, d_came_from);
 	
-		cudaMemcpy(&h_has_change, d_has_change, sizeof(bool), cudaMemcpyDeviceToHost);
+		// bf_func(n, h_weights, h_dist, h_has_change, h_came_from);
 
-		if(!h_has_change)
+		cudaMemcpy(h_has_change, d_has_change, sizeof(bool), cudaMemcpyDeviceToHost);
+
+		if(!(*h_has_change))
 		{
 			break;
 		}
@@ -110,8 +147,19 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 
 	auto stop = high_resolution_clock::now(); 
 
-	cudaMemcpy(h_dist, d_dist, sizeof(int) * n, cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_dist, d_dist, n * sizeof(int), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_came_from, d_came_from, n * sizeof(int), cudaMemcpyDeviceToHost);
+
+	// for(int i=0; i<n; i++)
+	// {
+	// 	cout << h_dist[i] << " ";
+	// }
+	// cout << "\n";
+	// for(int i=0; i<n; i++)
+	// {
+	// 	cout << h_came_from[i] << " ";
+	// }
+	// cout << "\n";
 
 	cudaFree(d_weights);
 	cudaFree(d_dist);
@@ -119,7 +167,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	cudaFree(d_has_change);
 
 	// Print shortest distances stored in dist[] 
-	ofstream myfile ("bfq.txt");
+	ofstream myfile ("bf.txt");
   	if (myfile.is_open())
   	{
 		for (int i = 0; i < n; ++i) 
@@ -128,7 +176,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
   	}
   	else cout << "Unable to open file";
 
-	ofstream myfile_path ("bfq_path.txt");
+	ofstream myfile_path ("bf_path.txt");
 	if (myfile_path.is_open())
 	{
 		vector<int> path;
@@ -145,7 +193,18 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 		{
 			myfile_path << *i << "\t\t";
 		}
-    	myfile_path.close();
+		myfile_path.close();
+		
+		int total = 0;
+		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
+		{
+			int u = *i;
+			int v = *(++i);
+			int weight = h_weights[convert_dimension_2D_1D(u, v, n)];
+			total += weight;
+			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
+		}
+		cout << "total: " << total <<"\n";
 	} 
   	else cout << "Unable to open file";
 
@@ -153,17 +212,11 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	cout << "duration :" << duration.count() << endl;
 } 
 
-//translate 2-dimension coordinate to 1-dimension
-int convert_dimension_2D_1D(int x, int y, int n) 
-{
-	return x * n + y;
-}
-
 void create_weights(int weights[], int n)
 {
 	for (int i = 0; i < n * n; i++) 
 	{
-		weights[i] = INT_MAX;
+		weights[i] = INF;
 	}
 
 	fstream fin;
@@ -193,15 +246,16 @@ void create_weights(int weights[], int n)
 // Driver program to test above functions 
 int main()
 {
-	int N = 1000;
+	int N = 10000;
 	int* mat = (int *)malloc(N * N * sizeof(int));
 
 	create_weights(mat, N);
 
-	// for (int i=0; i< N*N; i++)
+	// for(int i=0; i<N*N; i++)
 	// {
-	// 	cout << mat[i] << " ";
+	// 	cout << i << ": "<< mat[i] << "\n";
 	// }
+	// cout << "\n";
 
 	BellmanFord(0, 10, N, mat);
 

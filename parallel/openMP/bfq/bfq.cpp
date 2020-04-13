@@ -8,7 +8,9 @@
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../../../matlab/gr_20_5.csv";
+#define INF 2000000000
+
+const string fin_str = "../../../matlab/gr_10000_1000.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -45,9 +47,9 @@ void Graph::addEdge(int u, int v, int w)
 // The main function that finds shortest distances
 void BellmanFord(shared_ptr<Graph> graph, int src, int goal) 
 { 
-	vector<int> dist(graph->nodes.size(), INT_MAX);
+	vector<int> dist(graph->nodes.size(), INF);
 	vector<bool>in_queue(graph->nodes.size(), false);
-	vector<int> came_from(graph->nodes.size(), INT_MAX);
+	vector<int> came_from(graph->nodes.size(), INF);
 
 	dist[src] = 0;
 	in_queue[src] = true;
@@ -122,6 +124,26 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 			myfile_path << *i << "\t\t";
 		}
     	myfile_path.close();
+
+		int total = 0;
+		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
+		{
+			int u = *i;
+			int v = *(++i);
+			int weight = 0;
+			for(int j = 0; j < graph->nodes[u].size()-1; ++j)
+			{
+				if (graph->nodes[u][j].first == v)
+				{
+					weight = graph->nodes[u][j].second;
+					break;
+				}
+			}
+			total += weight;
+			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
+		}
+		cout << "total: " << total << "\n";
+
 	} 
   	else cout << "Unable to open file";
 

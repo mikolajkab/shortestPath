@@ -11,23 +11,11 @@
 using namespace std;
 using namespace std::chrono;
 
+#define INF 2000000000
+
 const string fin_str = "../matlab/gr_10000_1000.csv";
 
 typedef pair<int, int> iPair;
-
-__global__ void relax_initial(int * d_dist, int* h_came_from, bool* h_has_change, int n)
-{
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-
-	d_dist[i] = INT_MAX;
-
-	if (i == 0) 
-	{
-		d_dist[i] = 0;
-
-	}
-	__syncthreads();
-}
 
 __global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
 {
@@ -37,7 +25,7 @@ __global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* d_has_
 		d_has_change[v] = false;
 
 		int weight = d_weights[u * n + v];
-		if (weight < INT_MAX)
+		if (weight < INF)
 		{
 			if (d_dist[v] > d_dist[u] + weight)
 			{
@@ -47,6 +35,12 @@ __global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* d_has_
 			}
 		}
 	}
+}
+
+//translate 2-dimension coordinate to 1-dimension
+int convert_dimension_2D_1D(int x, int y, int n) 
+{
+	return x * n + y;
 }
 
 // The main function that finds shortest distances
@@ -64,8 +58,8 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 
 	for (int i=0; i<n; i++)
 	{
-		h_dist[i] = INT_MAX;
-		h_came_from[i] = INT_MAX;
+		h_dist[i] = INF;
+		h_came_from[i] = INF;
 	}
 
 	h_dist[src] = 0;
@@ -113,7 +107,6 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 			{
 				if(!in_queue[i])
 				{
-					cout << "i: " << i << "\n";
 					in_queue[i] = true;
 					node_queue.push(i);
 				}
@@ -160,25 +153,30 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 		{
 			myfile_path << *i << "\t\t";
 		}
-    	myfile_path.close();
+		myfile_path.close();
+		
+		int total = 0;
+		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
+		{
+			int u = *i;
+			int v = *(++i);
+			int weight = h_weights[convert_dimension_2D_1D(u, v, n)];
+			total += weight;
+			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
+		}
+		cout << "total: " << total <<"\n";
 	} 
   	else cout << "Unable to open file";
 
 	auto duration = duration_cast<milliseconds>(stop - start);
 	cout << "duration :" << duration.count() << endl;
-} 
-
-//translate 2-dimension coordinate to 1-dimension
-int convert_dimension_2D_1D(int x, int y, int n) 
-{
-	return x * n + y;
 }
 
 void create_weights(int weights[], int n)
 {
 	for (int i = 0; i < n * n; i++) 
 	{
-		weights[i] = INT_MAX;
+		weights[i] = INF;
 	}
 
 	fstream fin;
