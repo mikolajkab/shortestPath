@@ -9,11 +9,20 @@
 
 !/optimalControl/*
 
+!/parallel/cuda/astar/astar.cu
+!/parallel/cuda/astar/makefile
+
 !/parallel/cuda/bf/bf.cu
 !/parallel/cuda/bf/makefile
 
 !/parallel/cuda/bfq/bfq.cu
 !/parallel/cuda/bfq/makefile
+
+!/parallel/cuda/dijkstra/dijkstra.cu
+!/parallel/cuda/dijkstra/makefile
+
+!/parallel/cuda/slf/slf.cu
+!/parallel/cuda/slf/makefile
 
 !/parallel/openMP/astar/astar.cpp
 !/parallel/openMP/astar/makefile

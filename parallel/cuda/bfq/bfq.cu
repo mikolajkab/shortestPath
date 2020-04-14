@@ -15,8 +15,6 @@ using namespace std::chrono;
 
 const string fin_str = "../matlab/gr_10000_1000.csv";
 
-typedef pair<int, int> iPair;
-
 __global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
 {
 	int v = blockIdx.x * blockDim.x + threadIdx.x;

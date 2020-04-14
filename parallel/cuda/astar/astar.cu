@@ -1,5 +1,4 @@
-// A C++ program for Bellman-Ford's single source 
-// shortest path algorithm. 
+// A C++ program for A star shortest path algorithm. 
 #include <bits/stdc++.h>
 #include <chrono>
 #include <fstream>
@@ -13,61 +12,24 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../matlab/gr_10000_1000.csv";
+const string fin_gr_str = "../matlab/gr_10000_1000.csv";
+const string fin_h_str = "../../../matlab/h_10000_5000.csv";
 
-__global__ void bf(int n, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
+__global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
 {
 	int v = blockIdx.x * blockDim.x + threadIdx.x;
-
-	if (v == 0)
-		*d_has_change = false;
-	__syncthreads();
-
-	if(v >= n)
+	if(v < n)
 	{
-		return;
-	}
+		d_has_change[v] = false;
 
-	for (int u = 0; u < n; ++u)
-	{
-		if (u != v)
+		int weight = d_weights[u * n + v];
+		if (weight < INF)
 		{
-			int weight = d_weights[u * n + v];
-			if (weight < INF)
+			if (d_dist[v] > d_dist[u] + weight)
 			{
-				if (d_dist[v] > d_dist[u] + weight)
-				{
-					d_dist[v] = d_dist[u] + weight;
-					*d_has_change = true;
-					came_from[v] = u;
-				}
-			}
-		}
-	}
-	__syncthreads();
-}
-
-void bf_func(int n, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
-{
-	*d_has_change = false;
-
-	for (int v = 0; v < n; ++v)
-	{
-		for (int u = 0; u < n; ++u)
-		{
-			if (u != v)
-			{
-				int weight = d_weights[u * n + v];
-				if (weight < INF)
-				{
-					if (d_dist[v] > d_dist[u] + weight)
-					{
-						d_dist[v] = d_dist[u] + weight;
-						*d_has_change = true;
-						came_from[v] = u;
-						cout << "v: " << v << ", u: " << u << ", dist_v: " << d_dist[v] << ", dist_u: " << d_dist[u] << ", weight: " << weight << "\n";
-					}
-				}
+				d_dist[v] = d_dist[u] + weight;
+				d_has_change[v] = true;
+				came_from[v] = u;
 			}
 		}
 	}
@@ -88,8 +50,10 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	// host 
 	int *h_dist = (int *)calloc(sizeof(int), n);
 	int *h_came_from = (int *)calloc(sizeof(int), n);
-	bool *h_has_change = (bool *)calloc(sizeof(bool), 1);
+	bool *h_has_change = (bool *)calloc(sizeof(bool), n);
 	
+	vector<bool>in_queue(n, false);
+
 	for (int i=0; i<n; i++)
 	{
 		h_dist[i] = INF;
@@ -98,6 +62,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 
 	h_dist[src] = 0;
 	h_came_from[src] = src;
+	in_queue[src] = true;
 
 	// device
 	int* d_weights;
@@ -108,36 +73,50 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	cudaMalloc(&d_weights, n * n * sizeof(int));
 	cudaMalloc(&d_dist, n * sizeof(int));
 	cudaMalloc(&d_came_from, n * sizeof(int));
-	cudaMalloc(&d_has_change, sizeof(bool));
+	cudaMalloc(&d_has_change, n * sizeof(bool));
 
 	// copy host to device
 	cudaMemcpy(d_weights, h_weights, n * n * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_dist, h_dist, n * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_came_from, h_came_from, n * sizeof(int), cudaMemcpyHostToDevice);
 
-	// for(int i=0; i<n; i++)
-	// {
-	// 	cout << h_dist[i] << " ";
-	// }
-	// cout << "\n";
+	deque<int> node_queue;
+	node_queue.push_front(src);
 
 	int counter = 0;
 	// main loop
 	auto start = high_resolution_clock::now();
-	while(true)
+	while(!node_queue.empty())
 	{
+		int u = node_queue.front();
+		node_queue.pop_front();
+		in_queue[u] = false;
+
 		counter++;
 
         // invoke kernel
-		bf <<<blocksPerGrid, threadsPerBlock>>>(n, d_weights, d_dist, d_has_change, d_came_from);
+		bf <<<blocksPerGrid, threadsPerBlock>>>(n, u, d_weights, d_dist, d_has_change, d_came_from);
 	
-		// bf_func(n, h_weights, h_dist, h_has_change, h_came_from);
+		cudaMemcpy(h_has_change, d_has_change, n * sizeof(bool), cudaMemcpyDeviceToHost);
+		cudaMemcpy(h_dist, d_dist, sizeof(int) * n, cudaMemcpyDeviceToHost);
 
-		cudaMemcpy(h_has_change, d_has_change, sizeof(bool), cudaMemcpyDeviceToHost);
-
-		if(!(*h_has_change))
+		for (int i = 0; i < n; i++)
 		{
-			break;
+			if (h_has_change[i])
+			{
+				if(!in_queue[i])
+				{
+					if(node_queue.empty() || h_dist[i] <= h_dist[node_queue.front()])
+					{
+						node_queue.push_front(i);
+					}
+					else
+					{
+						node_queue.push_back(i);
+					}
+					in_queue[i] = true;
+				}
+			}
 		}
 	}
 
@@ -145,19 +124,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 
 	auto stop = high_resolution_clock::now(); 
 
-	cudaMemcpy(h_dist, d_dist, n * sizeof(int), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_came_from, d_came_from, n * sizeof(int), cudaMemcpyDeviceToHost);
-
-	// for(int i=0; i<n; i++)
-	// {
-	// 	cout << h_dist[i] << " ";
-	// }
-	// cout << "\n";
-	// for(int i=0; i<n; i++)
-	// {
-	// 	cout << h_came_from[i] << " ";
-	// }
-	// cout << "\n";
 
 	cudaFree(d_weights);
 	cudaFree(d_dist);
@@ -165,7 +132,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	cudaFree(d_has_change);
 
 	// Print shortest distances stored in dist[] 
-	ofstream myfile ("bf.txt");
+	ofstream myfile ("slf.txt");
   	if (myfile.is_open())
   	{
 		for (int i = 0; i < n; ++i) 
@@ -174,7 +141,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
   	}
   	else cout << "Unable to open file";
 
-	ofstream myfile_path ("bf_path.txt");
+	ofstream myfile_path ("slf_path.txt");
 	if (myfile_path.is_open())
 	{
 		vector<int> path;
@@ -208,7 +175,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 
 	auto duration = duration_cast<milliseconds>(stop - start);
 	cout << "duration :" << duration.count() << endl;
-} 
+}
 
 void create_weights(int weights[], int n)
 {
@@ -249,11 +216,10 @@ int main()
 
 	create_weights(mat, N);
 
-	// for(int i=0; i<N*N; i++)
+	// for (int i=0; i< N*N; i++)
 	// {
-	// 	cout << i << ": "<< mat[i] << "\n";
+	// 	cout << mat[i] << " ";
 	// }
-	// cout << "\n";
 
 	BellmanFord(0, 10, N, mat);
 
