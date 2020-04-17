@@ -1,4 +1,4 @@
-// A C++ program for A star shortest path algorithm. 
+// A C++ program for Astar shortest path algorithm. 
 #include <bits/stdc++.h>
 #include <chrono>
 #include <fstream>
@@ -12,8 +12,10 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_gr_str = "../matlab/gr_10000_1000.csv";
+const string fin_gr_str = "../../../matlab/gr_10000_5000.csv";
 const string fin_h_str = "../../../matlab/h_10000_5000.csv";
+
+typedef pair<int, int> iPair;
 
 __global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
 {
@@ -42,7 +44,7 @@ int convert_dimension_2D_1D(int x, int y, int n)
 }
 
 // The main function that finds shortest distances
-void BellmanFord(int src, int goal, int n, int h_weights[]) 
+void Astar(int src, int goal, int n, int h_weights[], int heuristic[]) 
 { 
 	dim3 threadsPerBlock = 256;
 	dim3 blocksPerGrid = ((n + threadsPerBlock.x - 1) / threadsPerBlock.x);
@@ -52,8 +54,6 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	int *h_came_from = (int *)calloc(sizeof(int), n);
 	bool *h_has_change = (bool *)calloc(sizeof(bool), n);
 	
-	vector<bool>in_queue(n, false);
-
 	for (int i=0; i<n; i++)
 	{
 		h_dist[i] = INF;
@@ -62,7 +62,6 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 
 	h_dist[src] = 0;
 	h_came_from[src] = src;
-	in_queue[src] = true;
 
 	// device
 	int* d_weights;
@@ -80,17 +79,21 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	cudaMemcpy(d_dist, h_dist, n * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_came_from, h_came_from, n * sizeof(int), cudaMemcpyHostToDevice);
 
-	deque<int> node_queue;
-	node_queue.push_front(src);
+	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
+	pq.push(make_pair(heuristic[src], src));
 
 	int counter = 0;
 	// main loop
 	auto start = high_resolution_clock::now();
-	while(!node_queue.empty())
+	while(!pq.empty())
 	{
-		int u = node_queue.front();
-		node_queue.pop_front();
-		in_queue[u] = false;
+		int u = pq.top().second; 
+		pq.pop();
+
+		if(u == goal)
+		{
+			break;
+		}
 
 		counter++;
 
@@ -104,18 +107,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 		{
 			if (h_has_change[i])
 			{
-				if(!in_queue[i])
-				{
-					if(node_queue.empty() || h_dist[i] <= h_dist[node_queue.front()])
-					{
-						node_queue.push_front(i);
-					}
-					else
-					{
-						node_queue.push_back(i);
-					}
-					in_queue[i] = true;
-				}
+				pq.push(make_pair(heuristic[i], i)); 
 			}
 		}
 	}
@@ -132,7 +124,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	cudaFree(d_has_change);
 
 	// Print shortest distances stored in dist[] 
-	ofstream myfile ("slf.txt");
+	ofstream myfile ("astar.txt");
   	if (myfile.is_open())
   	{
 		for (int i = 0; i < n; ++i) 
@@ -141,7 +133,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
   	}
   	else cout << "Unable to open file";
 
-	ofstream myfile_path ("slf_path.txt");
+	ofstream myfile_path ("astar_path.txt");
 	if (myfile_path.is_open())
 	{
 		vector<int> path;
@@ -185,7 +177,7 @@ void create_weights(int weights[], int n)
 	}
 
 	fstream fin;
-	fin.open(fin_str, ios::in);
+	fin.open(fin_gr_str, ios::in);
 
 	vector<int> row;
 	string line, word;
@@ -208,20 +200,56 @@ void create_weights(int weights[], int n)
 	fin.close();
 }
 
+void create_heuristic(int heuristic[], int n)
+{
+	for (int i = 0; i < n; i++) 
+	{
+		heuristic[i] = INF;
+	}
+
+	fstream fin_h;
+	fin_h.open(fin_h_str, ios::in);
+
+	vector<int> row;
+	string line, word;
+	
+	// don`t process the first line with column names
+	getline(fin_h,line);
+
+	// add heuristic to graph
+	while (!fin_h.eof())
+	{
+		row.clear();
+		getline(fin_h, line);
+		stringstream s(line);
+
+		while (getline(s, word, ','))
+		{
+			row.push_back(stoi(word));
+		}
+
+		heuristic[row[0]] = row[2];
+	}
+
+	fin_h.close();
+}
+
 // Driver program to test above functions 
 int main()
 {
 	int N = 10000;
 	int* mat = (int *)malloc(N * N * sizeof(int));
+	int* heuristic = (int *)malloc(N * sizeof(int));
 
 	create_weights(mat, N);
+	create_heuristic(heuristic, N);
 
 	// for (int i=0; i< N*N; i++)
 	// {
 	// 	cout << mat[i] << " ";
 	// }
 
-	BellmanFord(0, 10, N, mat);
+	Astar(0, 10, N, mat, heuristic);
 
 	return 0; 
 } 

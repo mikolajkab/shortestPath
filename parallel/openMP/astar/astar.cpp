@@ -3,14 +3,13 @@
 #include <chrono>
 #include <fstream>
 #include <stdlib.h>     /* srand, rand */
-#include <time.h>       /* time */
 #include <omp.h>
 
 using namespace std; 
 using namespace std::chrono;
 
-const string fin_gr_str = "../../../matlab/gr_10000_5000.csv";
-const string fin_h_str = "../../../matlab/h_10000_5000.csv";
+const string fin_gr_str = "../../../matlab/gr_10000_1000.csv";
+const string fin_h_str = "../../../matlab/h_10000_1000.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -94,7 +93,7 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 						{
 							dist[v] = dist[u] + weight; 
 							came_from[v] = u;
-							pq.push(make_pair(dist[v], v)); 
+							pq.push(make_pair(heuristic[v], v)); 
 						} 
 					}
 				}
@@ -131,7 +130,29 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 			myfile_path << *i << "\t\t";
 		}
     	myfile_path.close();
+
+		int total = 0;
+
+		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
+		{
+			int u = *i;
+			int v = *(++i);
+			int weight = 0;
+			for(int j = 0; j < graph->nodes[u].size()-1; ++j)
+			{
+				if (graph->nodes[u][j].first == v)
+				{
+					weight = graph->nodes[u][j].second;
+					break;
+				}
+			}
+			total += weight;
+			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
+		}
+
+		cout << "total: " << total << "\n";
 	} 
+
   	else cout << "Unable to open file";
 
 	auto duration = duration_cast<milliseconds>(stop - start);
@@ -141,9 +162,6 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 shared_ptr<Graph> create_graph()
 {
 	shared_ptr<Graph> graph = make_shared<Graph>();
-
-	/* initialize random seed: */
-	srand (time(NULL));
 
 	fstream fin_gr, fin_h;
 	fin_gr.open(fin_gr_str, ios::in);
@@ -170,7 +188,6 @@ shared_ptr<Graph> create_graph()
 		graph->addEdge(row[0]-1, row[1]-1, row[2]);
 	}
 
-	int u = 0;
 	// don`t process the first line with column names
 	getline(fin_h,line);
 	
@@ -187,8 +204,6 @@ shared_ptr<Graph> create_graph()
 		}
 
 		graph->addHeuristic(row[0], row[2]);
-
-		u++;
 	}
 	fin_h.close();
 	fin_gr.close();

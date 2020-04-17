@@ -8,7 +8,7 @@ using namespace std;
 using namespace std::chrono;
 
 #define CHUNK 5
-const string fin_str = "../../matlab/gr_10000_100.csv";
+const string fin_str = "../../../matlab/gr_10000_1000.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -125,6 +125,26 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 			myfile_path << *i << "\t\t";
 		}
     	myfile_path.close();
+
+		int total = 0;
+		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
+		{
+			int u = *i;
+			int v = *(++i);
+			int weight = 0;
+			for(int j = 0; j < graph->nodes[u].size()-1; ++j)
+			{
+				if (graph->nodes[u][j].first == v)
+				{
+					weight = graph->nodes[u][j].second;
+					break;
+				}
+			}
+			total += weight;
+			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
+		}
+
+		cout << "total: " << total << "\n";
 	} 
   	else cout << "Unable to open file";
 

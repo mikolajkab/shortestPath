@@ -5,8 +5,8 @@
 
 using namespace std; 
 
-const string fin_str = "../matlab/gr_10000_5000.csv";
-const string fout_str = "../matlab/h_10000_5000.csv";
+const string fin_str = "../matlab/gr_10000_1000.csv";
+const string fout_str = "../matlab/h_10000_1000.csv";
 
 // iPair ==> Integer Pair 
 typedef pair<int, int> iPair; 
@@ -99,7 +99,7 @@ void generate_heuristic(shared_ptr<Graph> graph, int src)
 			{
 				dist[v] = dist[u] + weight;
 				pq.push(make_pair(dist[v], v));
-				heuristic[v] = rand() % weight + heuristic[u] + 1;
+				heuristic[v] = rand() % weight + dist[u] + 1;
 				// heuristic[v] = dist[v];
 			}
 		}
