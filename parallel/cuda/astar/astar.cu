@@ -12,8 +12,8 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_gr_str = "../../../matlab/gr_10000_5000.csv";
-const string fin_h_str = "../../../matlab/h_10000_5000.csv";
+const string fin_gr_str = "../matlab/gr_10000_1000.csv";
+const string fin_h_str = "../matlab/h_10000_1000.csv";
 
 typedef pair<int, int> iPair;
 
@@ -107,14 +107,14 @@ void Astar(int src, int goal, int n, int h_weights[], int heuristic[])
 		{
 			if (h_has_change[i])
 			{
-				pq.push(make_pair(heuristic[i], i)); 
+				pq.push(make_pair(h_dist[i] + heuristic[i], i)); 
 			}
 		}
 	}
 
-	cout << "counter: " << counter << "\n";
-
 	auto stop = high_resolution_clock::now(); 
+
+	cout << "counter: " << counter << "\n";
 
 	cudaMemcpy(h_came_from, d_came_from, n * sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -249,7 +249,7 @@ int main()
 	// 	cout << mat[i] << " ";
 	// }
 
-	Astar(0, 10, N, mat, heuristic);
+	Astar(0, 4310, N, mat, heuristic);
 
 	return 0; 
 } 

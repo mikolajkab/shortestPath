@@ -120,9 +120,9 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 		}
 	}
 
-	cout << "counter: " << counter << "\n";
-
 	auto stop = high_resolution_clock::now(); 
+
+	cout << "counter: " << counter << "\n";
 
 	cudaMemcpy(h_came_from, d_came_from, n * sizeof(int), cudaMemcpyDeviceToHost);
 

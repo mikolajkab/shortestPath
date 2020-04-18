@@ -56,11 +56,13 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	// int i, tid, chunk;
 	// chunk = CHUNK;
 
+	int counter = 0;
+	int counter2 = 0;
+
 	/* Looping till priority queue becomes empty */
 	auto start = high_resolution_clock::now();
 	while (!pq.empty()) 
 	{ 
-		// counter++;
 		// printf("\n\nwhile loop: %d\n", counter);
 
 		int u = pq.top().second; 
@@ -71,12 +73,19 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 			break;
 		}
 
+		counter++;
+
 		// omp_set_num_threads(4);
 		#pragma omp parallel shared(u, dist, came_from, pq, graph) //private (i, tid)
 		{
 			#pragma omp for schedule(static) nowait
 			for (int i = 0; i < graph->nodes[u].size(); ++i)
 			{
+			int tid = omp_get_thread_num();
+			if (tid == 0) 
+			{
+				counter2++;
+			}
 				int v = graph->nodes[u][i].first;
 				int weight = graph->nodes[u][i].second;
 
@@ -96,6 +105,9 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		}
 	} 
 	auto stop = high_resolution_clock::now(); 
+
+	cout << "counter: " << counter << "\n";
+	cout << "counter2: " << counter2 << "\n";
 
 	// Print shortest distances stored in dist[]
 	ofstream myfile ("dijkstra.txt");
@@ -186,7 +198,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	shortestPath(graph, 0, 10);
+	shortestPath(graph, 0, 4310);
 
 	return 0; 
 } 

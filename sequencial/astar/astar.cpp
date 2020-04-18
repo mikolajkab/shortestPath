@@ -8,8 +8,8 @@
 using namespace std; 
 using namespace std::chrono;
 
-const string fin_gr_str = "../../matlab/gr_10000_5000.csv";
-const string fin_h_str = "../../matlab/h_10000_5000.csv";
+const string fin_gr_str = "../../matlab/gr_10000_1000.csv";
+const string fin_h_str = "../../matlab/h_10000_1000.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -66,6 +66,8 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	came_from[src] = src;
 	pq.push(make_pair(0 + heuristic[src], src)); 
 	
+	int counter = 0;
+
 	/* Looping till priority queue becomes empty */
 	auto start = high_resolution_clock::now();
 	while (!pq.empty()) 
@@ -73,10 +75,14 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		int u = pq.top().second; 
 		pq.pop(); 
 
+		cout << "u: " << u << "\n";
+
 		if(u == goal)
 		{
 			break;
 		}
+
+		counter++;
 
 		for (int i = 0; i < graph->nodes[u].size(); ++i)
 		{ 
@@ -92,6 +98,8 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		}
 	} 
 	auto stop = high_resolution_clock::now(); 
+
+	cout << "counter: " << counter << "\n";
 
 	// Print shortest distances stored in dist[] 
 	ofstream myfile ("astar.txt");
@@ -121,6 +129,27 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 			myfile_path << *i << "\t\t";
 		}
     	myfile_path.close();
+
+		int total = 0;
+
+		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
+		{
+			int u = *i;
+			int v = *(++i);
+			int weight = 0;
+			for(int j = 0; j < graph->nodes[u].size()-1; ++j)
+			{
+				if (graph->nodes[u][j].first == v)
+				{
+					weight = graph->nodes[u][j].second;
+					break;
+				}
+			}
+			total += weight;
+			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
+		}
+
+		cout << "total: " << total << "\n";
 	} 
   	else cout << "Unable to open file";
 
@@ -192,7 +221,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	shortestPath(graph, 0, 10);
+	shortestPath(graph, 0, 4310);
 
 	return 0; 
 } 

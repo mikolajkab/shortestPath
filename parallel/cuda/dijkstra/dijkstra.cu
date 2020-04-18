@@ -111,9 +111,9 @@ void Dijkstra(int src, int goal, int n, int h_weights[])
 		}
 	}
 
-	cout << "counter: " << counter << "\n";
-
 	auto stop = high_resolution_clock::now(); 
+
+	cout << "counter: " << counter << "\n";
 
 	cudaMemcpy(h_came_from, d_came_from, n * sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -188,7 +188,7 @@ void create_weights(int weights[], int n)
 		getline(fin, line);
 		stringstream s(line);
 
-		while (getline(s, word, ','))  
+		while (getline(s, word, ','))
 		{
 			row.push_back(stoi(word));
 		}
@@ -212,7 +212,7 @@ int main()
 	// 	cout << mat[i] << " ";
 	// }
 
-	Dijkstra(0, 10, N, mat);
+	Dijkstra(0, 4310, N, mat);
 
 	return 0; 
 } 

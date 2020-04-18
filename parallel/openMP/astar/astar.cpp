@@ -66,6 +66,8 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	came_from[src] = src;
 	pq.push(make_pair(0 + heuristic[src], src)); 
 	
+	int counter = 0;
+	int counter2 = 0;
 	/* Looping till priority queue becomes empty */
 	auto start = high_resolution_clock::now();
 	while (!pq.empty()) 
@@ -77,11 +79,21 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		{
 			break;
 		}
+
+		counter++;
+		counter2++;
+
 		#pragma omp parallel shared(u, dist, came_from, pq, heuristic) //private (i, tid)
 		{
 			#pragma omp for schedule(static) nowait
 			for (int i = 0; i < graph->nodes[u].size(); ++i)
 			{ 
+				int tid = omp_get_thread_num();
+				if (tid == 0) 
+				{
+					counter2++;
+				}
+
 				int v = graph->nodes[u][i].first; 
 				int weight = graph->nodes[u][i].second;
 
@@ -93,14 +105,18 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 						{
 							dist[v] = dist[u] + weight; 
 							came_from[v] = u;
-							pq.push(make_pair(heuristic[v], v)); 
+							pq.push(make_pair(dist[v] + heuristic[v], v)); 
 						} 
 					}
 				}
 			}
 		}
-	} 
+	}
+	
 	auto stop = high_resolution_clock::now(); 
+
+	cout << "counter: " << counter << "\n";
+	cout << "counter2: " << counter2 << "\n";
 
 	// Print shortest distances stored in dist[] 
 	ofstream myfile ("astar.txt");
@@ -217,7 +233,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	shortestPath(graph, 0, 10);
+	shortestPath(graph, 0, 4310);
 
 	return 0; 
 } 

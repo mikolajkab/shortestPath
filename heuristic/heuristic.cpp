@@ -99,7 +99,7 @@ void generate_heuristic(shared_ptr<Graph> graph, int src)
 			{
 				dist[v] = dist[u] + weight;
 				pq.push(make_pair(dist[v], v));
-				heuristic[v] = rand() % weight + dist[u] + 1;
+				heuristic[v] = rand() % weight + heuristic[u] + 1;
 				// heuristic[v] = dist[v];
 			}
 		}
@@ -120,7 +120,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	generate_heuristic(graph, 10);
+	generate_heuristic(graph, 4310);
 
 	return 0; 
 } 
