@@ -1,136 +1,177 @@
 // A C++ program for Bellman-Ford's single source 
 // shortest path algorithm. 
-#include <bits/stdc++.h> 
+#include <bits/stdc++.h>
+#include <chrono>
+#include <fstream>
 
-// a structure to represent a weighted edge in graph 
-struct Edge { 
-	int src, dest, weight; 
+using namespace std;
+using namespace std::chrono;
+
+#define INF 2000000000
+
+const string fin_str = "../../matlab/gr_10000_1000.csv";
+
+typedef pair<int, int> iPair; 
+
+// This class represents a directed graph
+class Graph 
+{ 
+public:
+	Graph();
+
+	void addEdge(int u, int v, int w);
+	
+	vector<vector<iPair> > nodes; 
 }; 
 
-// a structure to represent a connected, directed and 
-// weighted graph 
-struct Graph { 
-	// V-> Number of vertices, E-> Number of edges 
-	int V, E; 
-
-	// graph is represented as an array of edges. 
-	struct Edge* edge; 
-}; 
-
-// Creates a graph with V vertices and E edges 
-struct Graph* createGraph(int V, int E) 
+Graph::Graph() 
 { 
-	struct Graph* graph = new Graph; 
-	graph->V = V; 
-	graph->E = E; 
-	graph->edge = new Edge[E]; 
-	return graph; 
 } 
 
-// A utility function used to print the solution 
-void printArr(int dist[], int n) 
+void Graph::addEdge(int u, int v, int w)
 { 
-	printf("Vertex Distance from Source\n"); 
-	for (int i = 0; i < n; ++i) 
-		printf("%d \t\t %d\n", i, dist[i]); 
+	if (u >= nodes.size())
+	{
+		nodes.resize(u+1);
+	}
+	if (v >= nodes.size())
+	{
+		nodes.resize(v+1);
+	}
+
+	nodes[u].push_back(make_pair(v, w)); 
+	nodes[v].push_back(make_pair(u, w)); 
 } 
 
-// The main function that finds shortest distances from src to 
-// all other vertices using Bellman-Ford algorithm. The function 
-// also detects negative weight cycle 
-void BellmanFord(struct Graph* graph, int src) 
+// The main function that finds shortest distances
+void BellmanFord(shared_ptr<Graph> graph, int src, int goal) 
 { 
-	int V = graph->V; 
-	int E = graph->E; 
-	int dist[V]; 
+	vector<int> dist(graph->nodes.size(), INF);
+	vector<int> came_from(graph->nodes.size(), INF);
 
-	// Step 1: Initialize distances from src to all other vertices 
-	// as INFINITE 
-	for (int i = 0; i < V; i++) 
-		dist[i] = INT_MAX; 
-	dist[src] = 0; 
+	dist[src] = 0;
+	came_from[src] = src;
 
-	// Step 2: Relax all edges |V| - 1 times. A simple shortest 
-	// path from src to any other vertex can have at-most |V| - 1 
-	// edges 
-	for (int i = 1; i <= V - 1; i++) { 
-		for (int j = 0; j < E; j++) { 
-			int u = graph->edge[j].src; 
-			int v = graph->edge[j].dest; 
-			int weight = graph->edge[j].weight; 
-			if (dist[u] != INT_MAX && dist[u] + weight < dist[v]) 
-				dist[v] = dist[u] + weight; 
-		} 
+	bool has_change = true;
+
+	// main loop
+	auto start = high_resolution_clock::now(); 
+	while(true)
+	{
+		if(!has_change)
+		{
+			break;
+		}
+		has_change = false;
+
+		for (int u = 0; u < graph->nodes.size(); ++u)
+		{
+			for (int i = 0; i < graph->nodes[u].size(); ++i)
+			{
+				int v = graph->nodes[u][i].first;
+				int weight = graph->nodes[u][i].second;
+
+				if (dist[v] > dist[u] + weight) 
+				{
+					dist[v] = dist[u] + weight;
+					came_from[v] = u;
+					has_change = true;
+				}
+			}
+		}
+	}
+	auto stop = high_resolution_clock::now(); 
+
+	// Print shortest distances stored in dist[] 
+	ofstream myfile ("bf.txt");
+  	if (myfile.is_open())
+  	{
+		for (int i = 0; i < graph->nodes.size(); ++i) 
+			myfile << i << "\t\t" << dist[i] <<"\n"; 
+    	myfile.close();
+  	}
+  	else cout << "Unable to open file";
+
+	ofstream myfile_path ("bf_path.txt");
+	if (myfile_path.is_open())
+	{
+		vector<int> path;
+		int current = goal;
+		while(current != src)
+		{
+			path.push_back(current);
+			current = came_from[current];
+		}
+		path.push_back(src);
+		reverse(path.begin(), path.end());
+
+		for (vector<int>::iterator i = path.begin(); i < path.end(); ++i)
+		{
+			myfile_path << *i << "\t\t";
+		}
+    	myfile_path.close();
+
+		int total = 0;
+		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
+		{
+			int u = *i;
+			int v = *(++i);
+			int weight = 0;
+			for(int j = 0; j < graph->nodes[u].size()-1; ++j)
+			{
+				if (graph->nodes[u][j].first == v)
+				{
+					weight = graph->nodes[u][j].second;
+					break;
+				}
+			}
+			total += weight;
+			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
+		}
+
+		cout << "total: " << total << "\n";
 	} 
+  	else cout << "Unable to open file";
 
-	// Step 3: check for negative-weight cycles. The above step 
-	// guarantees shortest distances if graph doesn't contain 
-	// negative weight cycle. If we get a shorter path, then there 
-	// is a cycle. 
-	for (int i = 0; i < E; i++) { 
-		int u = graph->edge[i].src; 
-		int v = graph->edge[i].dest; 
-		int weight = graph->edge[i].weight; 
-		if (dist[u] != INT_MAX && dist[u] + weight < dist[v]) { 
-			printf("Graph contains negative weight cycle"); 
-			return; // If negative cycle is detected, simply return 
-		} 
-	} 
-
-	printArr(dist, V); 
-
-	return; 
+	auto duration = duration_cast<milliseconds>(stop - start);
+	cout << "duration :" << duration.count() << endl;
 } 
+
+shared_ptr<Graph> create_graph()
+{
+	shared_ptr<Graph> graph = make_shared<Graph>();
+
+	fstream fin;
+	fin.open(fin_str, ios::in);
+
+	vector<int> row;
+	string line, word;
+	getline(fin,line);
+
+	while (!fin.eof())
+	{
+		row.clear();
+		getline(fin, line);
+		stringstream s(line);
+
+		while (getline(s, word, ','))  
+		{
+			row.push_back(stoi(word));
+		}
+		graph->addEdge(row[0]-1, row[1]-1, row[2]);
+	}
+	fin.close();
+
+	return graph;
+}
 
 // Driver program to test above functions 
-int main() 
+int main()
 { 
-	/* Let us create the graph given in above example */
-	int V = 5; // Number of vertices in graph 
-	int E = 8; // Number of edges in graph 
-	struct Graph* graph = createGraph(V, E); 
+	shared_ptr<Graph> graph;
+	graph = create_graph();
 
-	// add edge 0-1 (or A-B in above figure) 
-	graph->edge[0].src = 0; 
-	graph->edge[0].dest = 1; 
-	graph->edge[0].weight = -1; 
-
-	// add edge 0-2 (or A-C in above figure) 
-	graph->edge[1].src = 0; 
-	graph->edge[1].dest = 2; 
-	graph->edge[1].weight = 4; 
-
-	// add edge 1-2 (or B-C in above figure) 
-	graph->edge[2].src = 1; 
-	graph->edge[2].dest = 2; 
-	graph->edge[2].weight = 3; 
-
-	// add edge 1-3 (or B-D in above figure) 
-	graph->edge[3].src = 1; 
-	graph->edge[3].dest = 3; 
-	graph->edge[3].weight = 2; 
-
-	// add edge 1-4 (or A-E in above figure) 
-	graph->edge[4].src = 1; 
-	graph->edge[4].dest = 4; 
-	graph->edge[4].weight = 2; 
-
-	// add edge 3-2 (or D-C in above figure) 
-	graph->edge[5].src = 3; 
-	graph->edge[5].dest = 2; 
-	graph->edge[5].weight = 5; 
-
-	// add edge 3-1 (or D-B in above figure) 
-	graph->edge[6].src = 3; 
-	graph->edge[6].dest = 1; 
-	graph->edge[6].weight = 1; 
-
-	// add edge 4-3 (or E-D in above figure) 
-	graph->edge[7].src = 4; 
-	graph->edge[7].dest = 3; 
-	graph->edge[7].weight = -3; 
-
-	BellmanFord(graph, 0); 
+	BellmanFord(graph, 0, 10);
 
 	return 0; 
 } 
