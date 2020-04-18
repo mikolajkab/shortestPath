@@ -9,7 +9,7 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../../matlab/gr_10000_1000.csv";
+const string fin_str = "../../matlab/gr_10000_5000.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -71,10 +71,10 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 				int v = graph->nodes[u][i].first;
 				int weight = graph->nodes[u][i].second;
 
-				if (dist[v] > dist[u] + weight) 
+				if (dist[u] > dist[v] + weight) 
 				{
-					dist[v] = dist[u] + weight;
-					came_from[v] = u;
+					dist[u] = dist[v] + weight;
+					came_from[u] = v;
 					has_change = true;
 				}
 			}
