@@ -8,8 +8,8 @@
 using namespace std; 
 using namespace std::chrono;
 
-const string fin_gr_str = "../../matlab/gr_10000_1000.csv";
-const string fin_h_str = "../../matlab/h_10000_1000.csv";
+const string fin_gr_str = "../../matlab/gr_10000_5000.csv";
+const string fin_h_str = "../../matlab/h_10000_5000.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -74,8 +74,6 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	{
 		int u = pq.top().second; 
 		pq.pop(); 
-
-		cout << "u: " << u << "\n";
 
 		if(u == goal)
 		{
@@ -221,7 +219,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	shortestPath(graph, 0, 4310);
+	shortestPath(graph, 0, 10);
 
 	return 0; 
 } 

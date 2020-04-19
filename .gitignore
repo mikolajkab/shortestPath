@@ -27,6 +27,9 @@
 !/parallel/openMP/astar/astar.cpp
 !/parallel/openMP/astar/makefile
 
+!/parallel/openMP/bf/bf.cpp
+!/parallel/openMP/bf/makefile
+
 !/parallel/openMP/bfq/bfq.cpp
 !/parallel/openMP/bfq/makefile
 
