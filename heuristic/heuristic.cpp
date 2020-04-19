@@ -5,8 +5,8 @@
 
 using namespace std; 
 
-const string fin_str = "../matlab/gr_10000_1000.csv";
-const string fout_str = "../matlab/h_10000_1000.csv";
+const string fin_str = "../matlab/gr_10000_5000.csv";
+const string fout_str = "../matlab/h_10000_5000.csv";
 
 // iPair ==> Integer Pair 
 typedef pair<int, int> iPair; 
@@ -120,7 +120,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	generate_heuristic(graph, 4310);
+	generate_heuristic(graph, 10);
 
 	return 0; 
 } 
