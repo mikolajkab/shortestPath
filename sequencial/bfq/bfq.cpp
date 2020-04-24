@@ -9,7 +9,7 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../../matlab/gr_20_5.csv";
+const string fin_str = "../../matlab/gr_10000_4000.csv";
 
 typedef pair<int, int> iPair; 
 

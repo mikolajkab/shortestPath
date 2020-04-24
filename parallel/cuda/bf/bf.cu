@@ -13,7 +13,7 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../matlab/gr_10000_1000.csv";
+const string fin_str = "../matlab/gr_10000_100.csv";
 
 __global__ void bf(int n, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
 {

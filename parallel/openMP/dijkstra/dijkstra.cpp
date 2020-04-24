@@ -7,8 +7,11 @@
 using namespace std; 
 using namespace std::chrono;
 
+#define INF 2000000000
+
 #define CHUNK 5
-const string fin_str = "../../../matlab/gr_10000_1000.csv";
+
+const string fin_str = "../../../matlab/gr_10000_4000.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -45,8 +48,8 @@ void Graph::addEdge(int u, int v, int w)
 // Prints shortest paths from src to all other vertices 
 void shortestPath(shared_ptr<Graph> graph, int src, int goal) 
 {
-	vector<int> dist(graph->nodes.size(), INT_MAX); 
-	vector<int> came_from(graph->nodes.size(), INT_MAX);
+	vector<int> dist(graph->nodes.size(), INF); 
+	vector<int> came_from(graph->nodes.size(), INF);
 	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
 
 	dist[src] = 0; 
@@ -198,7 +201,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	shortestPath(graph, 0, 4310);
+	shortestPath(graph, 0, 10);
 
 	return 0; 
 } 

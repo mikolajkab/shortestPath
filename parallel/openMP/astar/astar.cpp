@@ -8,8 +8,10 @@
 using namespace std; 
 using namespace std::chrono;
 
-const string fin_gr_str = "../../../matlab/gr_10000_5000.csv";
-const string fin_h_str = "../../../matlab/h_10000_5000.csv";
+#define INF 2000000000
+
+const string fin_gr_str = "../../../matlab/gr_10000_4000.csv";
+const string fin_h_str = "../../../matlab/h_10000_4000.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -57,8 +59,8 @@ void Graph::addHeuristic(int u, int h)
 // Prints shortest paths from src to goal 
 void shortestPath(shared_ptr<Graph> graph, int src, int goal) 
 {
-	vector<int> dist(graph->nodes.size(), INT_MAX); 
-	vector<int> came_from(graph->nodes.size(), INT_MAX);
+	vector<int> dist(graph->nodes.size(), INF); 
+	vector<int> came_from(graph->nodes.size(), INF);
 	vector<int> heuristic = graph->heuristic;
 	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
 
@@ -236,4 +238,4 @@ int main()
 	shortestPath(graph, 0, 10);
 
 	return 0; 
-} 
+}

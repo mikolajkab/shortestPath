@@ -12,8 +12,8 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_gr_str = "../matlab/gr_10000_1000.csv";
-const string fin_h_str = "../matlab/h_10000_1000.csv";
+const string fin_gr_str = "../matlab/gr_10000_100.csv";
+const string fin_h_str = "../matlab/h_10000_100.csv";
 
 typedef pair<int, int> iPair;
 
@@ -249,7 +249,7 @@ int main()
 	// 	cout << mat[i] << " ";
 	// }
 
-	Astar(0, 4310, N, mat, heuristic);
+	Astar(0, 10, N, mat, heuristic);
 
 	return 0; 
 } 
