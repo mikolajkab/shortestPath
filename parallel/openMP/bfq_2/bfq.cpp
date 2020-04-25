@@ -9,7 +9,7 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../../matlab/gr_10000_100.csv";
+const string fin_str = "../../../matlab/gr_20_5.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -57,60 +57,92 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 	queue<int> node_queue;
 	node_queue.push(src);
 
-	bool picked = false;
 	int u;
 	int v;
 	int weight;
 	int i;
+	int tid;
+	bool idle[5]; 
 
 	// main loop
 	auto start = high_resolution_clock::now(); 
-	while(!node_queue.empty())
+
+	#pragma omp parallel private(tid, u, v, weight, i) shared(idle)
 	{
-		#pragma omp parallel private(picked, u, v, weight, i)
+		omp_set_number_threads(2);
+
+		tid = omp_get_thread_num();
+
+		// master thread
+		if (tid == 0) 
 		{
-			#pragma omp critical
+			printf("thread id: %d, idle[1]: %d\n", tid, idle[1]);
+
+			while(idle[1])
 			{
-				if(!node_queue.empty())
-				{
-					u = node_queue.front();
-					node_queue.pop();
-					picked = true;
-				}
+				printf("thread id: %d, idle[1]: %d\n", tid, idle[1]);
+
+				break;
 			}
-
-			if(picked)
+		}
+		// normal thread
+		else
+		{
+			while(true)
 			{
-				// int tid = omp_get_thread_num();
-				// printf("thread id: %d, u: %d\n", tid, u);
-				
-				in_queue[u] = false;
+				printf("thread id: %d, idle[1]: %d\n", tid, idle[1]);
 
-				for (i = 0; i < graph->nodes[u].size(); ++i)
+				if (node_queue.empty())
 				{
-					v = graph->nodes[u][i].first;
-					weight = graph->nodes[u][i].second;
+					idle[tid] = true;
+				}
 
-					if (dist[v] > dist[u] + weight)
+				#pragma omp critical
+				{
+					if(!node_queue.empty())
 					{
-						#pragma omp critical
-						{
-							if (dist[v] > dist[u] + weight)
-							{
-								dist[v] = dist[u] + weight;
-								came_from[v] = u;
-							}
+						u = node_queue.front();
+						node_queue.pop();
+						idle[tid] = false;
+					}
+				}
 
-							if (!in_queue[v])
+				if(!idle[tid])
+				{
+					// int tid = omp_get_thread_num();
+					// printf("thread id: %d, u: %d\n", tid, u);
+					
+					in_queue[u] = false;
+
+					for (i = 0; i < graph->nodes[u].size(); ++i)
+					{
+						v = graph->nodes[u][i].first;
+						weight = graph->nodes[u][i].second;
+
+						if (dist[v] > dist[u] + weight)
+						{
+							#pragma omp critical
 							{
-								in_queue[v] = true;
-								node_queue.push(v);
+								if (dist[v] > dist[u] + weight)
+								{
+									dist[v] = dist[u] + weight;
+									came_from[v] = u;
+								}
+
+								if (!in_queue[v])
+								{
+									in_queue[v] = true;
+									node_queue.push(v);
+								}
 							}
 						}
 					}
 				}
 			}
 		}
+		
+
+		
 	}
 	auto stop = high_resolution_clock::now(); 
 
