@@ -9,7 +9,7 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../../../matlab/gr_10000_100.csv";
+const string fin_str = "../../../matlab/gr_10000_1000.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -69,73 +69,58 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 
 	#pragma omp parallel private(tid, u, v, weight, i) shared(idle) num_threads(8)
 	{
-		// omp_set_number_threads(2);
-
 		tid = omp_get_thread_num();
 
-		// master thread
-		if (tid == 0) 
+		while(!(idle[0] && idle[1] && idle[2] && idle[3] && idle[4] && idle[5] && idle[6] && idle[7]))
 		{
-			while(!(idle[1] && idle[2] && idle[3] && idle[4] && idle[5] && idle[6] && idle[7])){};
-
-			idle[0] = true;
-		}
-		// normal thread
-		else
-		{
-			while(!idle[0])
+			if (node_queue.empty())
 			{
-				if (node_queue.empty())
+				idle[tid] = true;
+			}
+			else
+			{
+				#pragma omp critical
 				{
-					idle[tid] = true;
-				}
-				else
-				{
-					#pragma omp critical
+					if(!node_queue.empty())
 					{
-						if(!node_queue.empty())
-						{
-							// printf("thread id: %d, idle[1]: %d\n", tid, idle[1]);
-							u = node_queue.front();
-							node_queue.pop();
-							idle[tid] = false;
-						}
+						// printf("thread id: %d, idle[1]: %d\n", tid, idle[1]);
+						u = node_queue.front();
+						node_queue.pop();
+						idle[tid] = false;
 					}
+				}
 
-					if(!idle[tid])
-					{				
-						in_queue[u] = false;
+				if(!idle[tid])
+				{
+					in_queue[u] = false;
 
-						for (i = 0; i < graph->nodes[u].size(); ++i)
+					for (i = 0; i < graph->nodes[u].size(); ++i)
+					{
+						v = graph->nodes[u][i].first;
+						weight = graph->nodes[u][i].second;
+
+						if (dist[v] > dist[u] + weight)
 						{
-							v = graph->nodes[u][i].first;
-							weight = graph->nodes[u][i].second;
-
-							if (dist[v] > dist[u] + weight)
+							#pragma omp critical
 							{
-								#pragma omp critical
+								if (dist[v] > dist[u] + weight)
 								{
-									if (dist[v] > dist[u] + weight)
-									{
-										dist[v] = dist[u] + weight;
-										came_from[v] = u;
+									dist[v] = dist[u] + weight;
+									came_from[v] = u;
 
-										if (!in_queue[v])
-										{
-											in_queue[v] = true;
-											node_queue.push(v);
-										}
+									if (!in_queue[v])
+									{
+										in_queue[v] = true;
+										node_queue.push(v);
 									}
 								}
 							}
 						}
 					}
 				}
+			idle[tid] = true;
 			}
 		}
-		
-		// printf("thread id: %d, idle[1]: %d\n", tid, idle[1]);
-		
 	}
 
 	auto stop = high_resolution_clock::now(); 
@@ -150,7 +135,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
   	}
   	else cout << "Unable to open file";
 
-ofstream myfile_path ("bfq_path.txt");
+	ofstream myfile_path ("bfq_path.txt");
 	if (myfile_path.is_open())
 	{
 		vector<int> path;
