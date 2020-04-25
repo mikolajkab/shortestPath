@@ -89,48 +89,44 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 				{
 					idle[tid] = true;
 				}
-
-				#pragma omp critical
+				else
 				{
-					if(!node_queue.empty())
+					#pragma omp critical
 					{
-						// printf("thread id: %d, idle[1]: %d\n", tid, idle[1]);
-						u = node_queue.front();
-						node_queue.pop();
-						idle[tid] = false;
-					}
-				}
-
-				if(!idle[tid])
-				{				
-					in_queue[u] = false;
-
-					for (i = 0; i < graph->nodes[u].size(); ++i)
-					{
-						v = graph->nodes[u][i].first;
-						weight = graph->nodes[u][i].second;
-
-						if (dist[v] > dist[u] + weight)
+						if(!node_queue.empty())
 						{
-							#pragma omp critical
+							// printf("thread id: %d, idle[1]: %d\n", tid, idle[1]);
+							u = node_queue.front();
+							node_queue.pop();
+							idle[tid] = false;
+						}
+					}
+
+					if(!idle[tid])
+					{				
+						in_queue[u] = false;
+
+						for (i = 0; i < graph->nodes[u].size(); ++i)
+						{
+							v = graph->nodes[u][i].first;
+							weight = graph->nodes[u][i].second;
+
+							if (dist[v] > dist[u] + weight)
 							{
-								if (dist[v] > dist[u] + weight)
+								#pragma omp critical
 								{
-									dist[v] = dist[u] + weight;
-									came_from[v] = u;
+									if (dist[v] > dist[u] + weight)
+									{
+										dist[v] = dist[u] + weight;
+										came_from[v] = u;
+
+										if (!in_queue[v])
+										{
+											in_queue[v] = true;
+											node_queue.push(v);
+										}
+									}
 								}
-							}
-							#pragma omp critical
-							{
-								if (!in_queue[v])
-								{
-									node_queue.push(v);
-								}
-							}
-							
-							if (!in_queue[v])
-							{
-								in_queue[v] = true;
 							}
 						}
 					}
