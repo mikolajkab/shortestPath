@@ -1,5 +1,4 @@
-// A C++ program for Bellman-Ford's queue-based single source 
-// shortest path algorithm. 
+// A C++ program for Bellman-Ford's queue-based algorithm. 
 #include <bits/stdc++.h>
 #include <chrono>
 #include <fstream>
@@ -8,12 +7,13 @@
 using namespace std;
 using namespace std::chrono;
 
-const string fin_str = "../../matlab/gr_10000_5000.csv";
+#define INF 2000000000
+
+const string fin_str = "../../../matlab/gr_10000_100.csv";
 
 typedef pair<int, int> iPair; 
 
-// This class represents a directed graph using 
-// adjacency vector representation 
+// This class represents a directed graph
 class Graph 
 { 
 public:
@@ -46,66 +46,57 @@ void Graph::addEdge(int u, int v, int w)
 // The main function that finds shortest distances
 void BellmanFord(shared_ptr<Graph> graph, int src, int goal) 
 { 
-	vector<int> dist(graph->nodes.size(), INT_MAX);
+	vector<int> dist(graph->nodes.size(), INF);
 	vector<bool>in_queue(graph->nodes.size(), false);
-	vector<int> came_from(graph->nodes.size(), INT_MAX);
+	vector<int> came_from(graph->nodes.size(), INF);
 
 	dist[src] = 0;
 	in_queue[src] = true;
 	came_from[src] = src;
 
-	queue<int> node_queue1;
-	queue<int> node_queue2;
-	node_queue1.push(src);
-
-	bool picked = false;
 	int u;
 	int v;
 	int weight;
 	int i;
+	int tid;
+	bool label_updated;
+	int n_threads = 2;
+	bool idle[n_threads];
 
-	bool last_picked_from_q1 = false;
-	
+	queue<int> node_queue;
+	vector<queue<int>> queues(n_threads, node_queue);
+	queues[0].push(src);
+
 	// main loop
 	auto start = high_resolution_clock::now(); 
-	bool q1_empty = node_queue1.empty();
-	bool q2_empty = node_queue2.empty();
 
-	while(!(q1_empty && q2_empty))
+	#pragma omp parallel private(tid, weight, label_updated, n_threads) shared(idle, queues) num_threads(n_threads)
 	{
+		tid = omp_get_thread_num();
+		idle[tid] = false;
+		// printf("tid: %d, idle[tid]: %d\n", tid, idle[tid]);
 
-		
-		#pragma omp parallel private(picked, u, v, weight, i)
+		while(!(idle[0] && idle[1]))
 		{
-				if(node_queue1.size() >= node_queue2.size())
-				{
-					#pragma omp critical queue1
-					{
-						u = node_queue1.front();
-						node_queue1.pop();
-					}
-				}
-				else
-				{
-					#pragma omp critical queue2
-					{
-						u = node_queue2.front();
-						node_queue2.pop();
-					}
-				}
-			picked = true;
-			}
+			printf("tid: %d, idle[tid]: %d\n", tid, idle[tid]);
 
-			if(picked)
+			if (queues[tid].empty())
 			{
-				// int tid = omp_get_thread_num();
-				// printf("thread id: %d, u: %d\n", tid, u);
-				
+				idle[tid] = true;
+				printf("empty tid: %d, idle[tid]: %d\n", tid, idle[tid]);
+
+			}
+			else
+			{
+				idle[tid] = false;
+				int u = queues[tid].front();
+				queues[tid].pop();
+
 				in_queue[u] = false;
 
-				for (i = 0; i < graph->nodes[u].size(); ++i)
+				for (int i = 0; i < graph->nodes[u].size(); ++i)
 				{
-					v = graph->nodes[u][i].first;
+					int v = graph->nodes[u][i].first;
 					weight = graph->nodes[u][i].second;
 
 					if (dist[v] > dist[u] + weight)
@@ -116,22 +107,62 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 							{
 								dist[v] = dist[u] + weight;
 								came_from[v] = u;
+								label_updated = true;
 							}
+						}
 
-							if (!in_queue[v])
+						if (label_updated)
+						{
+							label_updated = false;
+
+							if(!in_queue[v])
 							{
+								queues[0].push(v);
+
+								// int min_size = queues[0].size();
+								// int min_index = 0;
+								// for (int j = 1;  j < n_threads;  ++j)
+								// {
+								// 	int temp_size = queues[j].size();
+								// 	if(temp_size == 0)
+								// 	{
+								// 		min_index = j;
+								// 		break;
+								// 	}
+
+								// 	if (temp_size < min_size)
+								// 	{
+								// 		min_size = temp_size;
+								// 		min_index = j;
+								// 	}
+								// }
+
+								// if(tid==0)
+								// {
+								// 	#pragma omp critical
+								// 	{
+								// 		queues[1].push(v);
+								// 	}
+								// }
+								// else
+								// {
+								// 	#pragma omp critical
+								// 	{
+								// 		queues[0].push(v);
+								// 	}
+								// }
+							
 								in_queue[v] = true;
-								node_queue.push(v);
 							}
 						}
 					}
 				}
-			}
 
-		q1_empty = node_queue1.empty();
-		q2_empty = node_queue2.empty();
+			idle[tid] = true;
+			}
 		}
 	}
+
 	auto stop = high_resolution_clock::now(); 
 
 	// Print shortest distances stored in dist[] 
@@ -144,7 +175,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
   	}
   	else cout << "Unable to open file";
 
-ofstream myfile_path ("bfq_path.txt");
+	ofstream myfile_path ("bfq_path.txt");
 	if (myfile_path.is_open())
 	{
 		vector<int> path;
@@ -162,6 +193,26 @@ ofstream myfile_path ("bfq_path.txt");
 			myfile_path << *i << "\t\t";
 		}
     	myfile_path.close();
+
+		int total = 0;
+		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
+		{
+			int u = *i;
+			int v = *(++i);
+			int weight = 0;
+			for(int j = 0; j < graph->nodes[u].size()-1; ++j)
+			{
+				if (graph->nodes[u][j].first == v)
+				{
+					weight = graph->nodes[u][j].second;
+					break;
+				}
+			}
+			total += weight;
+			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
+		}
+		cout << "total: " << total << "\n";
+
 	} 
   	else cout << "Unable to open file";
 

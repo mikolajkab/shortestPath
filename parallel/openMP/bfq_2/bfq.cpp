@@ -9,7 +9,7 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../../../matlab/gr_10000_1000.csv";
+const string fin_str = "../../../matlab/gr_10000_100.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -62,7 +62,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 	int weight;
 	int i;
 	int tid;
-	bool idle[5]; 
+	bool idle[8]; 
 
 	// main loop
 	auto start = high_resolution_clock::now(); 
