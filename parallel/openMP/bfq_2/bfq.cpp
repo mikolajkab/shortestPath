@@ -118,7 +118,6 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 						}
 					}
 				}
-			idle[tid] = true;
 			}
 		}
 	}

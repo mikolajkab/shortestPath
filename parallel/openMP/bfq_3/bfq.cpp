@@ -60,34 +60,34 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 	int i;
 	int tid;
 	bool label_updated;
-	int n_threads = 2;
-	bool idle[n_threads];
+	int n_threads = 8;
+	bool idle[n_threads] = {false, true, true, true, true, true, true, true};
 
 	queue<int> node_queue;
-	vector<queue<int>> queues(n_threads, node_queue);
+	vector<queue<int>> queues(n_threads);
 	queues[0].push(src);
 
 	// main loop
 	auto start = high_resolution_clock::now(); 
 
-	#pragma omp parallel private(tid, weight, label_updated, n_threads) shared(idle, queues) num_threads(n_threads)
+	#pragma omp parallel private(tid, weight, label_updated, node_queue) shared(idle, queues) num_threads(n_threads)
 	{
 		tid = omp_get_thread_num();
-		idle[tid] = false;
-		// printf("tid: %d, idle[tid]: %d\n", tid, idle[tid]);
+		// printf("entry: tid: %d, idle[tid]: %d\n", tid, idle[tid]);
 
-		while(!(idle[0] && idle[1]))
+		while(!(idle[0] && idle[1] && idle[2] && idle[3] && idle[4] && idle[5] && idle[6] && idle[7]))
 		{
-			printf("tid: %d, idle[tid]: %d\n", tid, idle[tid]);
+			// printf("tid: %d, idle[tid]: %d\n", tid, idle[tid]);
 
 			if (queues[tid].empty())
 			{
 				idle[tid] = true;
-				printf("empty tid: %d, idle[tid]: %d\n", tid, idle[tid]);
-
+				// printf("empty tid: %d, idle[tid]: %d\n", tid, idle[tid]);
 			}
 			else
 			{
+				// printf("non-empty tid: %d, idle[tid]: %d\n", tid, idle[tid]);
+
 				idle[tid] = false;
 				int u = queues[tid].front();
 				queues[tid].pop();
@@ -117,48 +117,38 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 
 							if(!in_queue[v])
 							{
-								queues[0].push(v);
+								int min_size = queues[0].size();
+								int min_index;
+								
+								for (int j = 0;  j < n_threads;  ++j)
+								{
+									int temp_size = queues[j].size();
+									if(temp_size == 0)
+									{
+										min_index = j;
+										break;
+									}
 
-								// int min_size = queues[0].size();
-								// int min_index = 0;
-								// for (int j = 1;  j < n_threads;  ++j)
-								// {
-								// 	int temp_size = queues[j].size();
-								// 	if(temp_size == 0)
-								// 	{
-								// 		min_index = j;
-								// 		break;
-								// 	}
+									if (temp_size < min_size)
+									{
+										min_size = temp_size;
+										min_index = j;
+									}
+								}
 
-								// 	if (temp_size < min_size)
-								// 	{
-								// 		min_size = temp_size;
-								// 		min_index = j;
-								// 	}
-								// }
+								// node_queue = queues[min_index];
+								#pragma omp critical
+								{
+									// printf("tid: %d, min_index: %d, min_size: %d\n", tid, min_index, min_size);
 
-								// if(tid==0)
-								// {
-								// 	#pragma omp critical
-								// 	{
-								// 		queues[1].push(v);
-								// 	}
-								// }
-								// else
-								// {
-								// 	#pragma omp critical
-								// 	{
-								// 		queues[0].push(v);
-								// 	}
-								// }
+									queues[min_index].push(v);
+								}
 							
 								in_queue[v] = true;
 							}
 						}
 					}
 				}
-
-			idle[tid] = true;
 			}
 		}
 	}
