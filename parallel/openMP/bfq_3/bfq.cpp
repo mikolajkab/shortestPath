@@ -97,21 +97,14 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 	{
 		tid = omp_get_thread_num();
 
-		// printf("entry: tid: %d, idle[tid]: %d\n", tid, idle[tid]);
-
 		while(!(idle[0] && idle[1] && idle[2] && idle[3] && idle[4] && idle[5] && idle[6] && idle[7]))
 		{
-			// printf("tid: %d, idle[tid]: %d\n", tid, idle[tid]);
-
 			if (queues[tid].empty())
 			{
 				idle[tid] = true;
-				// printf("empty tid: %d, idle[tid]: %d\n", tid, idle[tid]);
 			}
 			else
 			{
-				// printf("non-empty tid: %d, idle[tid]: %d\n", tid, idle[tid]);
-
 				idle[tid] = false;
 				int u = queues[tid].front();
 				queues[tid].pop();
@@ -119,7 +112,6 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 				in_queue[u] = false;
 
 				vector<int> not_in_queue;
-				not_in_queue.clear();
 
 				for (int i = 0; i < graph->nodes[u].size(); ++i)
 				{
@@ -128,23 +120,17 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 
 					if (dist[v] > dist[u] + weight)
 					{
-						// #pragma omp critical
-						// {
-						// 	if (dist[v] > dist[u] + weight)
-						// 	{
-								int temp = dist[u] + weight;
-								omp_set_lock(&(lock_dist[v]));
-								{
-								dist[v] = temp;
-								came_from[v] = u;
-								}
-								omp_unset_lock(&(lock_dist[v]));
-								
-								if(!in_queue[v])
-								{
-									not_in_queue.push_back(v);
-							// 	}
-							// }
+						int temp = dist[u] + weight;
+						omp_set_lock(&(lock_dist[v]));
+						{
+							dist[v] = temp;
+							came_from[v] = u;
+						}
+						omp_unset_lock(&(lock_dist[v]));
+						
+						if(!in_queue[v])
+						{
+							not_in_queue.push_back(v);
 						}
 					}
 				}
@@ -169,6 +155,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 							min_index = j;
 						}
 					}
+					// printf("min_index: %d\n", min_index);
 			
 					for(std::vector<int>::iterator it = not_in_queue.begin(); it != not_in_queue.end(); ++it) 
 					{
