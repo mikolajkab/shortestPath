@@ -46,58 +46,48 @@ void Graph::addEdge(int u, int v, int w)
 // The main function that finds shortest distances
 void BellmanFord(shared_ptr<Graph> graph, int src, int goal) 
 { 
-	int dist[graph->nodes.size()];
-	for (int i=0; i<graph->nodes.size(); i++)
+	int n_nodes = graph->nodes.size();
+
+	int dist[n_nodes];
+	for (int i=0; i<n_nodes; i++)
         dist[i] = INF;
 
-	bool in_queue[graph->nodes.size()];
-	for (int i=0; i<graph->nodes.size(); i++)
+	bool in_queue[n_nodes];
+	for (int i=0; i<n_nodes; i++)
         in_queue[i] = false;
 
-	int came_from[graph->nodes.size()];
-	for (int i=0; i<graph->nodes.size(); i++)
+	int came_from[n_nodes];
+	for (int i=0; i<n_nodes; i++)
         came_from[i] = INF;
 
 	dist[src] = 0;
 	in_queue[src] = true;
 	came_from[src] = src;
 
-	int u;
-	int v;
-	int weight;
-	int i;
-	int tid;
-	bool label_updated;
-	int n_threads = 8;
-	bool idle[n_threads] = {false, true, true, true, true, true, true, true};
+	int n_threads = 4;
+	bool idle[n_threads] = {false, true, true, true /*, true, true, true, true*/};
 
-	queue<int> node_queue;
 	queue<int> queues[n_threads];
 	queues[0].push(src);
 
-	omp_lock_t lock[n_threads];
+	omp_lock_t lock_one[n_nodes];
+
+	for (int i=0; i<n_nodes; i++)
+        omp_init_lock(&(lock_one[i]));	
+
+	omp_lock_t lock_two[n_threads];
 
 	for (int i=0; i<n_threads; i++)
-        omp_init_lock(&(lock[i]));
-		
-	int n_nodes = 10000;
-	omp_lock_t lock_dist[n_nodes];
-	omp_lock_t lock_came_from[n_nodes];
-
-	for (int i=0; i<n_nodes; i++)
-        omp_init_lock(&(lock_dist[i]));
-
-	for (int i=0; i<n_nodes; i++)
-        omp_init_lock(&(lock_came_from[i]));	
+        omp_init_lock(&(lock_two[i]));
 
 	// main loop
 	auto start = high_resolution_clock::now(); 
 
-	#pragma omp parallel private(tid, weight, label_updated, node_queue) shared(idle, queues) num_threads(n_threads)
+	#pragma omp parallel shared(idle, queues) num_threads(n_threads)
 	{
-		tid = omp_get_thread_num();
+		int tid = omp_get_thread_num();
 
-		while(!(idle[0] && idle[1] && idle[2] && idle[3] && idle[4] && idle[5] && idle[6] && idle[7]))
+		while(!(idle[0] && idle[1] && idle[2] && idle[3] /* && idle[4] && idle[5] && idle[6] && idle[7]*/))
 		{
 			if (queues[tid].empty())
 			{
@@ -116,17 +106,17 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 				for (int i = 0; i < graph->nodes[u].size(); ++i)
 				{
 					int v = graph->nodes[u][i].first;
-					weight = graph->nodes[u][i].second;
+					int weight = graph->nodes[u][i].second;
 
 					if (dist[v] > dist[u] + weight)
 					{
 						int temp = dist[u] + weight;
-						omp_set_lock(&(lock_dist[v]));
+						omp_set_lock(&(lock_one[v]));
 						{
 							dist[v] = temp;
 							came_from[v] = u;
 						}
-						omp_unset_lock(&(lock_dist[v]));
+						omp_unset_lock(&(lock_one[v]));
 						
 						if(!in_queue[v])
 						{
@@ -155,17 +145,16 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 							min_index = j;
 						}
 					}
-					// printf("min_index: %d\n", min_index);
 			
 					for(std::vector<int>::iterator it = not_in_queue.begin(); it != not_in_queue.end(); ++it) 
 					{
 						if(!in_queue[*it])
 						{
-							omp_set_lock(&(lock[min_index]));
+							omp_set_lock(&(lock_two[min_index]));
 							{	
 								queues[min_index].push(*it);
 							}
-							omp_unset_lock(&(lock[min_index]));
+							omp_unset_lock(&(lock_two[min_index]));
 
 							in_queue[*it] = true;
 						}
@@ -178,20 +167,18 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 	auto stop = high_resolution_clock::now(); 
 	printf("test\n");
 
+	for (int i=0; i<n_nodes; i++)
+        omp_destroy_lock(&(lock_one[i]));
+
 	for (int i=0; i<n_threads; i++)
-        omp_destroy_lock(&(lock[i]));
+        omp_destroy_lock(&(lock_two[i]));
 
-	for (int i=0; i<n_nodes; i++)
-        omp_destroy_lock(&(lock_dist[i]));
-
-	for (int i=0; i<n_nodes; i++)
-        omp_destroy_lock(&(lock_came_from[i]));
 
 	// Print shortest distances stored in dist[] 
 	ofstream myfile ("bfq.txt");
   	if (myfile.is_open())
   	{
-		for (int i = 0; i < graph->nodes.size(); ++i) 
+		for (int i = 0; i < n_nodes; ++i) 
 			myfile << i << "\t\t" << dist[i] <<"\n"; 
     	myfile.close();
   	}

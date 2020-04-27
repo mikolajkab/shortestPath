@@ -175,7 +175,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	BellmanFord(graph, 0, 9234);
+	BellmanFord(graph, 0, 10);
 
 	return 0; 
 } 

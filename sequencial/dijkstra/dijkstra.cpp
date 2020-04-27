@@ -8,7 +8,7 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../../matlab/gr_10000_4000.csv";
+const string fin_str = "../../matlab/gr_10000_100.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -49,17 +49,15 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	vector<int> came_from(graph->nodes.size(), INF);
 	priority_queue< iPair, vector <iPair> , greater<iPair> > pq;
 
-	dist[src] = 0; 
+	dist[src] = 0;
 	came_from[src] = src;
 	pq.push(make_pair(0, src)); 
-
-	int counter = 0;
 
 	/* Looping till priority queue becomes empty */
 	auto start = high_resolution_clock::now();
 	while (!pq.empty()) 
 	{
-		int u = pq.top().second; 
+		int u = pq.top().second;
 		pq.pop();
 
 		if(u == goal)
@@ -67,8 +65,6 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 			break;
 		}
 		
-		counter++;
-
 		for (int i = 0; i < graph->nodes[u].size(); ++i)
 		{ 
 			int v = graph->nodes[u][i].first; 
@@ -83,8 +79,6 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		} 
 	} 
 	auto stop = high_resolution_clock::now(); 
-
-	cout << "counter: " << counter << "\n";
 
 	// Print shortest distances stored in dist[]
 	ofstream myfile ("dijkstra.txt");

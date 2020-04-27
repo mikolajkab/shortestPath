@@ -11,7 +11,7 @@ using namespace std::chrono;
 
 #define CHUNK 5
 
-const string fin_str = "../../../matlab/gr_10000_4000.csv";
+const string fin_str = "../../../matlab/gr_10000_100.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -56,18 +56,10 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	came_from[src] = src;
 	pq.push(make_pair(0, src));
 
-	// int i, tid, chunk;
-	// chunk = CHUNK;
-
-	int counter = 0;
-	int counter2 = 0;
-
 	/* Looping till priority queue becomes empty */
 	auto start = high_resolution_clock::now();
 	while (!pq.empty()) 
-	{ 
-		// printf("\n\nwhile loop: %d\n", counter);
-
+	{
 		int u = pq.top().second; 
 		pq.pop(); 
 
@@ -76,19 +68,12 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 			break;
 		}
 
-		counter++;
-
 		// omp_set_num_threads(4);
 		#pragma omp parallel shared(u, dist, came_from, pq, graph) //private (i, tid)
 		{
 			#pragma omp for schedule(static) nowait
 			for (int i = 0; i < graph->nodes[u].size(); ++i)
 			{
-			int tid = omp_get_thread_num();
-			if (tid == 0) 
-			{
-				counter2++;
-			}
 				int v = graph->nodes[u][i].first;
 				int weight = graph->nodes[u][i].second;
 
@@ -104,13 +89,10 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 						} 
 					}
 				}
-			} 
+			}
 		}
 	} 
-	auto stop = high_resolution_clock::now(); 
-
-	cout << "counter: " << counter << "\n";
-	cout << "counter2: " << counter2 << "\n";
+	auto stop = high_resolution_clock::now();
 
 	// Print shortest distances stored in dist[]
 	ofstream myfile ("dijkstra.txt");
@@ -165,7 +147,7 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 
 	auto duration = duration_cast<milliseconds>(stop - start);
 	cout << "duration :" << duration.count() << endl;
-} 
+}
 
 shared_ptr<Graph> create_graph()
 {
