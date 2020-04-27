@@ -46,9 +46,17 @@ void Graph::addEdge(int u, int v, int w)
 // The main function that finds shortest distances
 void BellmanFord(shared_ptr<Graph> graph, int src, int goal) 
 { 
-	vector<int> dist(graph->nodes.size(), INF);
-	vector<bool>in_queue(graph->nodes.size(), false);
-	vector<int> came_from(graph->nodes.size(), INF);
+	int dist[graph->nodes.size()];
+	for (int i=0; i<graph->nodes.size(); i++)
+        dist[i] = INF;
+
+	bool in_queue[graph->nodes.size()];
+	for (int i=0; i<graph->nodes.size(); i++)
+        in_queue[i] = false;
+
+	int came_from[graph->nodes.size()];
+	for (int i=0; i<graph->nodes.size(); i++)
+        came_from[i] = INF;
 
 	dist[src] = 0;
 	in_queue[src] = true;
@@ -64,8 +72,23 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 	bool idle[n_threads] = {false, true, true, true, true, true, true, true};
 
 	queue<int> node_queue;
-	vector<queue<int>> queues(n_threads);
+	queue<int> queues[n_threads];
 	queues[0].push(src);
+
+	omp_lock_t lock[n_threads];
+
+	for (int i=0; i<n_threads; i++)
+        omp_init_lock(&(lock[i]));
+		
+	int n_nodes = 10000;
+	omp_lock_t lock_dist[n_nodes];
+	omp_lock_t lock_came_from[n_nodes];
+
+	for (int i=0; i<n_nodes; i++)
+        omp_init_lock(&(lock_dist[i]));
+
+	for (int i=0; i<n_nodes; i++)
+        omp_init_lock(&(lock_came_from[i]));	
 
 	// main loop
 	auto start = high_resolution_clock::now(); 
@@ -73,6 +96,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 	#pragma omp parallel private(tid, weight, label_updated, node_queue) shared(idle, queues) num_threads(n_threads)
 	{
 		tid = omp_get_thread_num();
+
 		// printf("entry: tid: %d, idle[tid]: %d\n", tid, idle[tid]);
 
 		while(!(idle[0] && idle[1] && idle[2] && idle[3] && idle[4] && idle[5] && idle[6] && idle[7]))
@@ -94,6 +118,9 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 
 				in_queue[u] = false;
 
+				vector<int> not_in_queue;
+				not_in_queue.clear();
+
 				for (int i = 0; i < graph->nodes[u].size(); ++i)
 				{
 					int v = graph->nodes[u][i].first;
@@ -101,51 +128,59 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 
 					if (dist[v] > dist[u] + weight)
 					{
-						#pragma omp critical
-						{
-							if (dist[v] > dist[u] + weight)
-							{
-								dist[v] = dist[u] + weight;
+						// #pragma omp critical
+						// {
+						// 	if (dist[v] > dist[u] + weight)
+						// 	{
+								int temp = dist[u] + weight;
+								omp_set_lock(&(lock_dist[v]));
+								{
+								dist[v] = temp;
 								came_from[v] = u;
-								label_updated = true;
-							}
+								}
+								omp_unset_lock(&(lock_dist[v]));
+								
+								if(!in_queue[v])
+								{
+									not_in_queue.push_back(v);
+							// 	}
+							// }
+						}
+					}
+				}
+
+				if(!not_in_queue.empty())
+				{	
+					int min_size = queues[0].size();
+					int min_index;
+					
+					for (int j = 0; j < n_threads; ++j)
+					{
+						int temp_size = queues[j].size();
+						if(temp_size == 0)
+						{
+							min_index = j;
+							break;
 						}
 
-						if (label_updated)
+						if (temp_size < min_size)
 						{
-							label_updated = false;
-
-							if(!in_queue[v])
-							{
-								int min_size = queues[0].size();
-								int min_index;
-								
-								for (int j = 0;  j < n_threads;  ++j)
-								{
-									int temp_size = queues[j].size();
-									if(temp_size == 0)
-									{
-										min_index = j;
-										break;
-									}
-
-									if (temp_size < min_size)
-									{
-										min_size = temp_size;
-										min_index = j;
-									}
-								}
-
-								// node_queue = queues[min_index];
-								#pragma omp critical
-								{
-									// printf("tid: %d, min_index: %d, min_size: %d\n", tid, min_index, min_size);
-
-									queues[min_index].push(v);
-								}
-							
-								in_queue[v] = true;
+							min_size = temp_size;
+							min_index = j;
+						}
+					}
+			
+					for(std::vector<int>::iterator it = not_in_queue.begin(); it != not_in_queue.end(); ++it) 
+					{
+						if(!in_queue[*it])
+						{
+							omp_set_lock(&(lock[min_index]));
+							{	
+								queues[min_index].push(*it);
 							}
+							omp_unset_lock(&(lock[min_index]));
+
+							in_queue[*it] = true;
 						}
 					}
 				}
@@ -154,6 +189,16 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 	}
 
 	auto stop = high_resolution_clock::now(); 
+	printf("test\n");
+
+	for (int i=0; i<n_threads; i++)
+        omp_destroy_lock(&(lock[i]));
+
+	for (int i=0; i<n_nodes; i++)
+        omp_destroy_lock(&(lock_dist[i]));
+
+	for (int i=0; i<n_nodes; i++)
+        omp_destroy_lock(&(lock_came_from[i]));
 
 	// Print shortest distances stored in dist[] 
 	ofstream myfile ("bfq.txt");
