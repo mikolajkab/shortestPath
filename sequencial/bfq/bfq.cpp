@@ -9,7 +9,7 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../../matlab/gr_10000_4000.csv";
+const string fin_str = "../../matlab/gr_10000_100.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -95,7 +95,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
   	}
   	else cout << "Unable to open file";
 
-ofstream myfile_path ("bfq_path.txt");
+	ofstream myfile_path ("bfq_path.txt");
 	if (myfile_path.is_open())
 	{
 		vector<int> path;
@@ -175,7 +175,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	BellmanFord(graph, 0, 10);
+	BellmanFord(graph, 0, 9234);
 
 	return 0; 
 } 
