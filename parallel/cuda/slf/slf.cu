@@ -13,7 +13,7 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../matlab/gr_10000_4000.csv";
+const string fin_str = "../matlab/gr_optimal_control_3rd_order.csv";
 
 __global__ void bf(int n, int u, float const* d_weights, float* d_dist, bool* d_has_change, int* came_from)
 {
@@ -211,7 +211,7 @@ void create_weights(float weights[], int n)
 // Driver program to test above functions 
 int main()
 {
-	int N = 10000;
+	int N = 17000;
 	float* mat = (float *)malloc(N * N * sizeof(float));
 
 	create_weights(mat, N);
@@ -221,7 +221,7 @@ int main()
 	// 	cout << mat[i] << " ";
 	// }
 
-	BellmanFord(0, 10, N, mat);
+	BellmanFord(0, 2324, N, mat);
 
 	return 0;
 } 
