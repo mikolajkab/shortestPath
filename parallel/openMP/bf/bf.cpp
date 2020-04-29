@@ -66,7 +66,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 
 		#pragma omp parallel shared(dist, came_from, graph)
 		{
-			#pragma omp for schedule(static) nowait
+			#pragma omp for schedule(dynamic) nowait
 			for (int u = 0; u < graph->nodes.size(); ++u)
 			{
 				for (int i = 0; i < graph->nodes[u].size(); ++i)
