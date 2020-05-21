@@ -13,9 +13,9 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../matlab/gr_10000_100.csv";
+const string fin_str = "../matlab/gr_optimal_control_3rd_order.csv";
 
-__global__ void bf(int n, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
+__global__ void bf(int n, float const* d_weights, float* d_dist, bool* d_has_change, int* came_from)
 {
 	int v = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -32,7 +32,7 @@ __global__ void bf(int n, int const* d_weights, int* d_dist, bool* d_has_change,
 	{
 		if (u != v)
 		{
-			int weight = d_weights[u * n + v];
+			float weight = d_weights[u * n + v];
 			if (weight < INF)
 			{
 				if (d_dist[v] > d_dist[u] + weight)
@@ -47,7 +47,7 @@ __global__ void bf(int n, int const* d_weights, int* d_dist, bool* d_has_change,
 	__syncthreads();
 }
 
-void bf_func(int n, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
+void bf_func(int n, float const* d_weights, float* d_dist, bool* d_has_change, int* came_from)
 {
 	*d_has_change = false;
 
@@ -57,7 +57,7 @@ void bf_func(int n, int const* d_weights, int* d_dist, bool* d_has_change, int* 
 		{
 			if (u != v)
 			{
-				int weight = d_weights[u * n + v];
+				float weight = d_weights[u * n + v];
 				if (weight < INF)
 				{
 					if (d_dist[v] > d_dist[u] + weight)
@@ -80,13 +80,13 @@ int convert_dimension_2D_1D(int x, int y, int n)
 }
 
 // The main function that finds shortest distances
-void BellmanFord(int src, int goal, int n, int h_weights[]) 
+void BellmanFord(int src, int goal, int n, float h_weights[]) 
 { 
 	dim3 threadsPerBlock = 256;
 	dim3 blocksPerGrid = ((n + threadsPerBlock.x - 1) / threadsPerBlock.x);
 	
 	// host 
-	int *h_dist = (int *)calloc(sizeof(int), n);
+	float *h_dist = (float *)calloc(sizeof(float), n);
 	int *h_came_from = (int *)calloc(sizeof(int), n);
 	bool *h_has_change = (bool *)calloc(sizeof(bool), 1);
 	
@@ -100,19 +100,19 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	h_came_from[src] = src;
 
 	// device
-	int* d_weights;
-	int* d_dist;
+	float* d_weights;
+	float* d_dist;
 	int* d_came_from;
 	bool* d_has_change;
 
-	cudaMalloc(&d_weights, n * n * sizeof(int));
-	cudaMalloc(&d_dist, n * sizeof(int));
+	cudaMalloc(&d_weights, n * n * sizeof(float));
+	cudaMalloc(&d_dist, n * sizeof(float));
 	cudaMalloc(&d_came_from, n * sizeof(int));
 	cudaMalloc(&d_has_change, sizeof(bool));
 
 	// copy host to device
-	cudaMemcpy(d_weights, h_weights, n * n * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_dist, h_dist, n * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_weights, h_weights, n * n * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_dist, h_dist, n * sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_came_from, h_came_from, n * sizeof(int), cudaMemcpyHostToDevice);
 
 	// for(int i=0; i<n; i++)
@@ -145,7 +145,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 
 	cout << "counter: " << counter << "\n";
 
-	cudaMemcpy(h_dist, d_dist, n * sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_dist, d_dist, n * sizeof(float), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_came_from, d_came_from, n * sizeof(int), cudaMemcpyDeviceToHost);
 
 	// for(int i=0; i<n; i++)
@@ -193,12 +193,12 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 		}
 		myfile_path.close();
 		
-		int total = 0;
+		float total = 0;
 		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
 		{
 			int u = *i;
 			int v = *(++i);
-			int weight = h_weights[convert_dimension_2D_1D(u, v, n)];
+			float weight = h_weights[convert_dimension_2D_1D(u, v, n)];
 			total += weight;
 			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
 		}
@@ -210,7 +210,7 @@ void BellmanFord(int src, int goal, int n, int h_weights[])
 	cout << "duration :" << duration.count() << endl;
 } 
 
-void create_weights(int weights[], int n)
+void create_weights(float weights[], int n)
 {
 	for (int i = 0; i < n * n; i++) 
 	{
@@ -220,7 +220,7 @@ void create_weights(int weights[], int n)
 	fstream fin;
 	fin.open(fin_str, ios::in);
 
-	vector<int> row;
+	vector<float> row;
 	string line, word;
 	getline(fin,line);
 
@@ -232,7 +232,7 @@ void create_weights(int weights[], int n)
 
 		while (getline(s, word, ','))  
 		{
-			row.push_back(stoi(word));
+			row.push_back(stof(word));
 		}
 
 		weights[convert_dimension_2D_1D(row[0]-1, row[1]-1, n)] = row[2];
@@ -244,8 +244,8 @@ void create_weights(int weights[], int n)
 // Driver program to test above functions 
 int main()
 {
-	int N = 10000;
-	int* mat = (int *)malloc(N * N * sizeof(int));
+	int N = 17000;
+	float* mat = (float *)malloc(N * N * sizeof(float));
 
 	create_weights(mat, N);
 
@@ -255,7 +255,7 @@ int main()
 	// }
 	// cout << "\n";
 
-	BellmanFord(0, 10, N, mat);
+	BellmanFord(0, 2324, N, mat);
 
 	return 0; 
 } 
