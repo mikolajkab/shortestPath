@@ -112,7 +112,7 @@ void generate_heuristic(shared_ptr<Graph> graph, int src)
 	}
 	
 	fout.close();
-}
+} 
 
 
 int main() 
