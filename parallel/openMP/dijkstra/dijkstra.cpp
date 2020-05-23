@@ -13,7 +13,7 @@ using namespace std::chrono;
 
 const string fin_str = "../../../matlab/gr_optimal_control_3rd_order.csv";
 
-typedef pair<float, int> fiPair; 
+typedef pair<int, int> iPair; 
 
 // This class represents a directed graph
 class Graph 
@@ -21,16 +21,16 @@ class Graph
 public: 
 	Graph(); 
 
-	void addEdge(int u, int v, float w); 
+	void addEdge(int u, int v, int w); 
 
-	vector<vector<fiPair> > nodes;
+	vector<vector<iPair> > nodes;
 }; 
 
 Graph::Graph() 
 { 
 } 
 
-void Graph::addEdge(int u, int v, float w)
+void Graph::addEdge(int u, int v, int w)
 { 
 	if (u >= nodes.size())
 	{
@@ -41,16 +41,16 @@ void Graph::addEdge(int u, int v, float w)
 		nodes.resize(v+1);
 	}
 
-	nodes[u].push_back(make_pair(w, v)); 
-	nodes[v].push_back(make_pair(w, u));
+	nodes[u].push_back(make_pair(v, w)); 
+	nodes[v].push_back(make_pair(u, w));
 } 
 
 // Prints shortest paths from src to all other vertices 
 void shortestPath(shared_ptr<Graph> graph, int src, int goal) 
 {
-	vector<float> dist(graph->nodes.size(), INF); 
+	vector<int> dist(graph->nodes.size(), INF); 
 	vector<int> came_from(graph->nodes.size(), INF);
-	priority_queue< fiPair, vector <fiPair> , greater<fiPair> > pq; 
+	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
 
 	dist[src] = 0; 
 	came_from[src] = src;
@@ -74,8 +74,8 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 			#pragma omp for schedule(static) nowait
 			for (int i = 0; i < graph->nodes[u].size(); ++i)
 			{
-				int v = graph->nodes[u][i].second;
-				float weight = graph->nodes[u][i].first;
+				int v = graph->nodes[u][i].first;
+				int weight = graph->nodes[u][i].second;
 
 				if (dist[v] > dist[u] + weight) 
 				{ 
@@ -84,8 +84,8 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 						if (dist[v] > dist[u] + weight)
 						{
 							dist[v] = dist[u] + weight; 
-							pq.push(make_pair(dist[v], v)); 
 							came_from[v] = u;
+							pq.push(make_pair(dist[v], v)); 
 						} 
 					}
 				}
@@ -94,7 +94,7 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 	} 
 	auto stop = high_resolution_clock::now();
 
-		// Print shortest distances stored in dist[]
+	// Print shortest distances stored in dist[]
 	ofstream myfile ("dijkstra.txt");
   	if (myfile.is_open())
   	{
@@ -123,25 +123,25 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		}
     	myfile_path.close();
 
-		float total = 0;
-
+		int total = 0;
 		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
 		{
 			int u = *i;
 			int v = *(++i);
-			float weight = 0.0;
+			int weight = 0;
 			for(int j = 0; j < graph->nodes[u].size()-1; ++j)
 			{
-				if (graph->nodes[u][j].second == v)
+				if (graph->nodes[u][j].first == v)
 				{
-					weight = graph->nodes[u][j].first;
+					weight = graph->nodes[u][j].second;
 					break;
 				}
 			}
 			total += weight;
 			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
 		}
-		cout << "total: " << total <<"\n";
+
+		cout << "total: " << total << "\n";
 	} 
   	else cout << "Unable to open file";
 
@@ -156,7 +156,7 @@ shared_ptr<Graph> create_graph()
 	fstream fin;
 	fin.open(fin_str, ios::in);
 
-	vector<float> row;
+	vector<int> row;
 	string line, word;
 	getline(fin,line);
 
@@ -168,12 +168,12 @@ shared_ptr<Graph> create_graph()
 
 		while (getline(s, word, ','))  
 		{
-			row.push_back(stof(word));
+			row.push_back(stoi(word));
 		}
 		graph->addEdge(row[0]-1, row[1]-1, row[2]);
 	}
 	fin.close();
-
+	
 	return graph;
 }
 

@@ -2,6 +2,7 @@
 #include<bits/stdc++.h> 
 #include <chrono>
 #include <fstream>
+#include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
 
 using namespace std; 
@@ -12,7 +13,7 @@ using namespace std::chrono;
 const string fin_gr_str = "../../matlab/gr_optimal_control_3rd_order.csv";
 const string fin_h_str = "../../matlab/h_optimal_control_3rd_order.csv";
 
-typedef pair<float, int> fiPair; 
+typedef pair<int, int> iPair; 
 
 // This class represents a directed graph
 class Graph 
@@ -20,18 +21,18 @@ class Graph
 public: 
 	Graph(); 
 
-	void addEdge(int u, int v, float w); 
-	void addHeuristic(int u, float h); 
+	void addEdge(int u, int v, int w); 
+	void addHeuristic(int u, int h); 
 
-	vector<vector<fiPair> > nodes; 
-	vector<float> heuristic;
+	vector<vector<iPair> > nodes;
+	vector<int> heuristic;
 }; 
 
 Graph::Graph() 
 { 
 } 
 
-void Graph::addEdge(int u, int v, float w)
+void Graph::addEdge(int u, int v, int w)
 { 
 	if (u >= nodes.size())
 	{
@@ -42,11 +43,11 @@ void Graph::addEdge(int u, int v, float w)
 		nodes.resize(v+1);
 	}
 
-	nodes[u].push_back(make_pair(w, v)); 
-	nodes[v].push_back(make_pair(w, u));
-} 
+	nodes[u].push_back(make_pair(v, w)); 
+	nodes[v].push_back(make_pair(u, w));
+}
 
-void Graph::addHeuristic(int u, float h)
+void Graph::addHeuristic(int u, int h)
 {
 	if (u >= heuristic.size())
 	{
@@ -58,10 +59,10 @@ void Graph::addHeuristic(int u, float h)
 // Prints shortest paths from src to goal 
 void shortestPath(shared_ptr<Graph> graph, int src, int goal) 
 {
-	vector<float> dist(graph->nodes.size(), INF); 
+	vector<int> dist(graph->nodes.size(), INF); 
 	vector<int> came_from(graph->nodes.size(), INF);
-	vector<float> heuristic = graph->heuristic;
-	priority_queue< fiPair, vector <fiPair> , greater<fiPair> > pq;
+	vector<int> heuristic = graph->heuristic;
+	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
 
 	dist[src] = 0; 
 	came_from[src] = src;
@@ -81,8 +82,8 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 
 		for (int i = 0; i < graph->nodes[u].size(); ++i)
 		{ 
-			int v = graph->nodes[u][i].second; 
-			float weight = graph->nodes[u][i].first; 
+			int v = graph->nodes[u][i].first; 
+			int weight = graph->nodes[u][i].second; 
 
 			if (dist[v] > dist[u] + weight) 
 			{ 
@@ -92,9 +93,9 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 			} 
 		}
 	} 
-	auto stop = high_resolution_clock::now(); 
+	auto stop = high_resolution_clock::now();
 
-	// Print shortest distances stored in dist[]
+	// Print shortest distances stored in dist[] 
 	ofstream myfile ("astar.txt");
   	if (myfile.is_open())
   	{
@@ -114,7 +115,6 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 			path.push_back(current);
 			current = came_from[current];
 		}
-
 		path.push_back(src);
 		reverse(path.begin(), path.end());
 
@@ -124,25 +124,26 @@ void shortestPath(shared_ptr<Graph> graph, int src, int goal)
 		}
     	myfile_path.close();
 
-		float total = 0;
+		int total = 0;
 
 		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
 		{
 			int u = *i;
 			int v = *(++i);
-			float weight = 0.0;
+			int weight = 0;
 			for(int j = 0; j < graph->nodes[u].size()-1; ++j)
 			{
-				if (graph->nodes[u][j].second == v)
+				if (graph->nodes[u][j].first == v)
 				{
-					weight = graph->nodes[u][j].first;
+					weight = graph->nodes[u][j].second;
 					break;
 				}
 			}
 			total += weight;
 			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
 		}
-		cout << "total: " << total <<"\n";
+
+		cout << "total: " << total << "\n";
 	} 
   	else cout << "Unable to open file";
 
@@ -158,7 +159,7 @@ shared_ptr<Graph> create_graph()
 	fin_gr.open(fin_gr_str, ios::in);
 	fin_h.open(fin_h_str, ios::in);
 
-	vector<float> row;
+	vector<int> row;
 	string line, word;
 
 	// dont process the first line with column names
@@ -173,7 +174,7 @@ shared_ptr<Graph> create_graph()
 
 		while (getline(s, word, ','))  
 		{
-			row.push_back(stof(word));
+			row.push_back(stoi(word));
 		}
 
 		graph->addEdge(row[0]-1, row[1]-1, row[2]);
@@ -191,7 +192,7 @@ shared_ptr<Graph> create_graph()
 
 		while (getline(s, word, ','))  
 		{
-			row.push_back(stof(word));
+			row.push_back(stoi(word));
 		}
 
 		graph->addHeuristic(row[0], row[2]);

@@ -14,16 +14,16 @@ using namespace std::chrono;
 
 const string fin_str = "../matlab/gr_optimal_control_3rd_order.csv";
 
-typedef pair<float, int> fiPair; 
+typedef pair<int, int> iPair;
 
-__global__ void bf(int n, int u, float const* d_weights, float* d_dist, bool* d_has_change, int* came_from)
+__global__ void bf(int n, int u, int const* d_weights, int* d_dist, bool* d_has_change, int* came_from)
 {
 	int v = blockIdx.x * blockDim.x + threadIdx.x;
 	if(v < n)
 	{
 		d_has_change[v] = false;
 
-		float weight = d_weights[u * n + v];
+		int weight = d_weights[u * n + v];
 		if (weight < INF)
 		{
 			if (d_dist[v] > d_dist[u] + weight)
@@ -43,13 +43,13 @@ int convert_dimension_2D_1D(int x, int y, int n)
 }
 
 // The main function that finds shortest distances
-void Dijkstra(int src, int goal, int n, float h_weights[]) 
+void Dijkstra(int src, int goal, int n, int h_weights[]) 
 { 
 	dim3 threadsPerBlock = 256;
 	dim3 blocksPerGrid = ((n + threadsPerBlock.x - 1) / threadsPerBlock.x);
 	
 	// host 
-	float *h_dist = (float *)calloc(sizeof(float), n);
+	int *h_dist = (int *)calloc(sizeof(int), n);
 	int *h_came_from = (int *)calloc(sizeof(int), n);
 	bool *h_has_change = (bool *)calloc(sizeof(bool), n);
 	
@@ -63,22 +63,22 @@ void Dijkstra(int src, int goal, int n, float h_weights[])
 	h_came_from[src] = src;
 
 	// device
-	float* d_weights;
-	float* d_dist;
+	int* d_weights;
+	int* d_dist;
 	int* d_came_from;
 	bool* d_has_change;
 
-	cudaMalloc(&d_weights, n * n * sizeof(float));
-	cudaMalloc(&d_dist, n * sizeof(float));
+	cudaMalloc(&d_weights, n * n * sizeof(int));
+	cudaMalloc(&d_dist, n * sizeof(int));
 	cudaMalloc(&d_came_from, n * sizeof(int));
 	cudaMalloc(&d_has_change, n * sizeof(bool));
 
 	// copy host to device
-	cudaMemcpy(d_weights, h_weights, n * n * sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_dist, h_dist, n * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_weights, h_weights, n * n * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_dist, h_dist, n * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_came_from, h_came_from, n * sizeof(int), cudaMemcpyHostToDevice);
 
-	priority_queue< fiPair, vector <fiPair> , greater<fiPair> > pq; 
+	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
 	pq.push(make_pair(0, src));
 
 	int counter = 0;
@@ -100,7 +100,7 @@ void Dijkstra(int src, int goal, int n, float h_weights[])
 		bf <<<blocksPerGrid, threadsPerBlock>>>(n, u, d_weights, d_dist, d_has_change, d_came_from);
 	
 		cudaMemcpy(h_has_change, d_has_change, n * sizeof(bool), cudaMemcpyDeviceToHost);
-		cudaMemcpy(h_dist, d_dist, sizeof(float) * n, cudaMemcpyDeviceToHost);
+		cudaMemcpy(h_dist, d_dist, sizeof(int) * n, cudaMemcpyDeviceToHost);
 
 		for (int i = 0; i < n; i++)
 		{
@@ -151,12 +151,12 @@ void Dijkstra(int src, int goal, int n, float h_weights[])
 		}
 		myfile_path.close();
 		
-		float total = 0;
+		int total = 0;
 		for (vector<int>::iterator i = path.begin(); i < path.end()-1;)
 		{
 			int u = *i;
 			int v = *(++i);
-			float weight = h_weights[convert_dimension_2D_1D(u, v, n)];
+			int weight = h_weights[convert_dimension_2D_1D(u, v, n)];
 			total += weight;
 			cout << "u: " << u << ", v: " << v <<  ", weight: " << weight << "\n";
 		}
@@ -168,7 +168,7 @@ void Dijkstra(int src, int goal, int n, float h_weights[])
 	cout << "duration :" << duration.count() << endl;
 }
 
-void create_weights(float weights[], int n)
+void create_weights(int weights[], int n)
 {
 	for (int i = 0; i < n * n; i++) 
 	{
@@ -178,7 +178,7 @@ void create_weights(float weights[], int n)
 	fstream fin;
 	fin.open(fin_str, ios::in);
 
-	vector<float> row;
+	vector<int> row;
 	string line, word;
 	getline(fin,line);
 
@@ -190,7 +190,7 @@ void create_weights(float weights[], int n)
 
 		while (getline(s, word, ','))
 		{
-			row.push_back(stof(word));
+			row.push_back(stoi(word));
 		}
 
 		weights[convert_dimension_2D_1D(row[0]-1, row[1]-1, n)] = row[2];
@@ -203,7 +203,7 @@ void create_weights(float weights[], int n)
 int main()
 {
 	int N = 16456;
-	float* mat = (float *)malloc(N * N * sizeof(float));
+	int* mat = (int *)malloc(N * N * sizeof(int));
 
 	create_weights(mat, N);
 
@@ -214,5 +214,5 @@ int main()
 
 	Dijkstra(0, 2324, N, mat);
 
-	return 0;
+	return 0; 
 } 

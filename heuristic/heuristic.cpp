@@ -3,30 +3,31 @@
 #include <stdlib.h>     /* srand, rand */
 #include<bits/stdc++.h> 
 
-using namespace std;
+using namespace std; 
 
 #define INF 2000000000
 
 const string fin_str = "../matlab/gr_optimal_control_3rd_order.csv";
 const string fout_str = "../matlab/h_optimal_control_3rd_order.csv";
 
-typedef pair<float, int> fiPair; 
+// iPair ==> Integer Pair 
+typedef pair<int, int> iPair; 
 
 class Graph 
 { 
 public: 
-	Graph();
+	Graph(); 
 
-	void addEdge(int u, int v, float w); 
+	void addEdge(int u, int v, int w); 
 
-	vector<vector<fiPair> > nodes; 
-};
+	vector<vector<iPair> > nodes;
+}; 
 
 Graph::Graph() 
 { 
 } 
 
-void Graph::addEdge(int u, int v, float w)
+void Graph::addEdge(int u, int v, int w)
 { 
 	if (u >= nodes.size())
 	{
@@ -37,9 +38,9 @@ void Graph::addEdge(int u, int v, float w)
 		nodes.resize(v+1);
 	}
 
-	nodes[u].push_back(make_pair(w, v)); 
-	nodes[v].push_back(make_pair(w, u));
-}
+	nodes[u].push_back(make_pair(v, w)); 
+	nodes[v].push_back(make_pair(u, w));
+} 
 
 shared_ptr<Graph> create_graph()
 {
@@ -48,7 +49,7 @@ shared_ptr<Graph> create_graph()
 	fstream fin;
 	fin.open(fin_str, ios::in);
 
-	vector<float> row;
+	vector<int> row;
 	string line, word;
 	getline(fin,line);
 
@@ -60,12 +61,12 @@ shared_ptr<Graph> create_graph()
 
 		while (getline(s, word, ','))  
 		{
-			row.push_back(stof(word));
+			row.push_back(stoi(word));
 		}
 		graph->addEdge(row[0]-1, row[1]-1, row[2]);
 	}
 	fin.close();
-
+	
 	return graph;
 }
 
@@ -78,9 +79,9 @@ void generate_heuristic(shared_ptr<Graph> graph, int src)
 	fstream fout;
 	fout.open(fout_str, ios::out);
 
-	vector<float> dist(graph->nodes.size(), INF);
-	vector<float> heuristic(graph->nodes.size(), INF);
-	priority_queue< fiPair, vector <fiPair> , greater<fiPair> > pq; 
+	vector<int> dist(graph->nodes.size(), INF);
+	vector<int> heuristic(graph->nodes.size(), INF);
+	priority_queue< iPair, vector <iPair> , greater<iPair> > pq; 
 
 	dist[src] = 0;
 	heuristic[src] = 0;
@@ -93,16 +94,15 @@ void generate_heuristic(shared_ptr<Graph> graph, int src)
 
 		for (int i = 0; i < graph->nodes[u].size(); ++i)
 		{
-			int v = graph->nodes[u][i].second;
-			float weight = graph->nodes[u][i].first;
+			int v = graph->nodes[u][i].first;
+			int weight = graph->nodes[u][i].second;
 
 			if(dist[v] > dist[u] + weight)
 			{
 				dist[v] = dist[u] + weight;
 				pq.push(make_pair(dist[v], v));
-				float r = ((float) rand() / (RAND_MAX));
-				heuristic[v] = r * weight + dist[u];
-				// cout << "weight: " << weight << ", r: " << r << endl;
+				heuristic[v] = rand() % weight + heuristic[u] + 1;
+				// heuristic[v] = dist[v];
 			}
 		}
 	}
@@ -114,7 +114,7 @@ void generate_heuristic(shared_ptr<Graph> graph, int src)
 	}
 	
 	fout.close();
-} 
+}
 
 
 int main() 
@@ -124,5 +124,5 @@ int main()
 
 	generate_heuristic(graph, 2324);
 
-	return 0;
+	return 0; 
 } 
