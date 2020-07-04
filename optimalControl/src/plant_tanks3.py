@@ -48,7 +48,7 @@ u3_list = [round(i,4) for i in u3_list]
 # nonlinear discrete equations:
 # x1(k+1) = x1(k) - dt*Ap1/A1*sqrt(2*g)*sqrt(x1(k)) + dt/(ro*A1)*u1(k)
 # x2(k+1) = x2(k) + dt*Ap1/A2*sqrt(2*g)*sqrt(x1(k)) - dt*Ap2/A2*sqrt(2*g)*sqrt(x2(k)) + dt/(ro*A2)*u2(k)
-# x3(k+1) = x3(k) + dt*Ap2/A3*sqrt(2*g)*sqrt(x1(k)) - dt*Ap3/A3*sqrt(2*g)*sqrt(x3(k)) + dt/(ro*A3)*u3(k)
+# x3(k+1) = x3(k) + dt*Ap2/A3*sqrt(2*g)*sqrt(x2(k)) - dt*Ap3/A3*sqrt(2*g)*sqrt(x3(k)) + dt/(ro*A3)*u3(k)
 # with coefficients
 # x1(k+1) = c11*x1(k) + c12*sqrt(x1(k)) + c13*u1(k)
 # x2(k+1) = c21*x2(k) + c22*sqrt(x1(k)) + c23*sqrt(x2(k)) + c24*u2(k)

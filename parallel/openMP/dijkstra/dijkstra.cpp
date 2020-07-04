@@ -11,7 +11,7 @@ using namespace std::chrono;
 
 #define CHUNK 5
 
-const string fin_str = "../../../matlab/gr_optimal_control_3rd_order.csv";
+const string fin_str = "../../../matlab/gr_10000_4000.csv";
 
 typedef pair<int, int> iPair; 
 
@@ -183,7 +183,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	shortestPath(graph, 0, 2324);
+	shortestPath(graph, 0, 3456);
 
 	return 0; 
 } 

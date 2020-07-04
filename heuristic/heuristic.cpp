@@ -7,8 +7,8 @@ using namespace std;
 
 #define INF 2000000000
 
-const string fin_str = "../matlab/gr_optimal_control_3rd_order.csv";
-const string fout_str = "../matlab/h_optimal_control_3rd_order.csv";
+const string fin_str = "../matlab/gr_10000_4000.csv";
+const string fout_str = "../matlab/h_10000_4000.csv";
 
 // iPair ==> Integer Pair 
 typedef pair<int, int> iPair; 
@@ -122,7 +122,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	generate_heuristic(graph, 2324);
+	generate_heuristic(graph, 10);
 
 	return 0; 
 } 
