@@ -9,9 +9,13 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../../../matlab/gr_optimal_control_3rd_order.csv";
+const string fin_str = "../../../matlab/gr_10000_4000.csv";
 
 typedef pair<int, int> iPair; 
+
+struct Edge { 
+    int src, dest, weight; 
+};
 
 // This class represents a directed graph
 class Graph 
@@ -22,6 +26,7 @@ public:
 	void addEdge(int u, int v, int w);
 	
 	vector<vector<iPair> > nodes; 
+	vector<Edge> edges; 
 }; 
 
 Graph::Graph() 
@@ -41,6 +46,19 @@ void Graph::addEdge(int u, int v, int w)
 
 	nodes[u].push_back(make_pair(v, w)); 
 	nodes[v].push_back(make_pair(u, w)); 
+
+
+	Edge edge;
+	edge.src = u;
+	edge.dest = v;
+	edge.weight = w;
+
+	edges.push_back(edge);
+
+	edge.src = v;
+	edge.dest = u;
+
+	edges.push_back(edge);
 } 
 
 // The main function that finds shortest distances
@@ -56,7 +74,9 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 
 	// main loop
 	auto start = high_resolution_clock::now(); 
-	while(true)
+
+
+	for (int i = 0; i < graph->nodes.size(); i++)
 	{
 		if(!has_change)
 		{
@@ -64,26 +84,55 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 		}
 		has_change = false;
 
-		#pragma omp parallel shared(dist, came_from, graph)
-		{
-			#pragma omp for schedule(dynamic) nowait
-			for (int u = 0; u < graph->nodes.size(); ++u)
-			{
-				for (int i = 0; i < graph->nodes[u].size(); ++i)
-				{
-					int v = graph->nodes[u][i].first;
-					int weight = graph->nodes[u][i].second;
+	#pragma omp parallel shared(dist, came_from, graph)
+	{
+	#pragma omp for schedule(dynamic) nowait
 
-					if (dist[u] > dist[v] + weight) 
-					{
-						dist[u] = dist[v] + weight;
-						came_from[u] = v;
-						has_change = true;
-					}
-				}
+		for (int j = 0; j < graph->edges.size(); j++)
+		{
+
+			int u = graph->edges[j].src; 
+            int v = graph->edges[j].dest; 
+            int weight = graph->edges[j].weight; 
+
+            if (dist[v] > weight + dist[u]) 
+			{
+                dist[v] = dist[u] + weight; 
+				came_from[v] = u;
+				has_change = true;
 			}
 		}
+    } 
 	}
+
+	// while(true)
+	// {
+	// 	if(!has_change)
+	// 	{
+	// 		break;
+	// 	}
+	// 	has_change = false;
+
+	// 	#pragma omp parallel shared(dist, came_from, graph)
+	// 	{
+	// 		#pragma omp for schedule(dynamic) nowait
+	// 		for (int u = 0; u < graph->nodes.size(); ++u)
+	// 		{
+	// 			for (int i = 0; i < graph->nodes[u].size(); ++i)
+	// 			{
+	// 				int v = graph->nodes[u][i].first;
+	// 				int weight = graph->nodes[u][i].second;
+
+	// 				if (dist[u] > dist[v] + weight) 
+	// 				{
+	// 					dist[u] = dist[v] + weight;
+	// 					came_from[u] = v;
+	// 					has_change = true;
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 	auto stop = high_resolution_clock::now(); 
 
 	// Print shortest distances stored in dist[] 
@@ -175,7 +224,7 @@ int main()
 	shared_ptr<Graph> graph;
 	graph = create_graph();
 
-	BellmanFord(graph, 0, 2324);
+	BellmanFord(graph, 0, 10);
 
 	return 0; 
 } 
