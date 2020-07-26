@@ -9,7 +9,7 @@ using namespace std::chrono;
 
 #define INF 2000000000
 
-const string fin_str = "../../matlab/gr_10000_4000.csv";
+const string fin_str = "../../matlab/gr_10000_100.csv";
 
 
 
@@ -79,11 +79,11 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 
 	for (int i = 0; i < graph->nodes.size(); i++)
 	{
-		if(!has_change)
-		{
-			break;
-		}
-		has_change = false;
+		// if(!has_change)
+		// {
+		// 	break;
+		// }
+		// has_change = false;
 
 		for (int j = 0; j < graph->edges.size(); j++)
 		{
@@ -99,7 +99,7 @@ void BellmanFord(shared_ptr<Graph> graph, int src, int goal)
 			{
                 dist[v] = dist[u] + weight; 
 				came_from[v] = u;
-				has_change = true;
+				// has_change = true;
 			}
         } 
 	}
